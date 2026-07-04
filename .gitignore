@@ -145,3 +145,8 @@ node_modules/
 .next/
 
 eda_output
+
+# -----------------------------
+# Cache de build incremental do TypeScript
+# -----------------------------
+frontend/tsconfig.tsbuildinfo
