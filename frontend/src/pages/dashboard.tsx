@@ -75,8 +75,16 @@ export default function DashboardPage() {
         {/* Welcome card */}
         <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.4)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-2)] text-sm font-bold text-[#06141b]">
-              {firstName.charAt(0).toUpperCase()}
+            <div className="relative h-10 w-10 shrink-0">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-px -z-10 rounded-full bg-[var(--color-glow-blue)] opacity-[0.35] blur-sm"
+              />
+              <img
+                src="/usuario-generico.svg"
+                alt="Usuário"
+                className="h-10 w-10 rounded-full border border-[var(--color-glow-blue)]/45 bg-[var(--color-surface-3)] object-cover"
+              />
             </div>
             <div>
               <p className="text-sm font-semibold text-[var(--color-foreground)]">

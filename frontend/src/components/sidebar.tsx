@@ -36,8 +36,6 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
   const { user, logout } = useAuth()
   useLocation()
 
-  const inicial = user?.nome?.trim().charAt(0).toUpperCase() || "?"
-
   return (
     <aside
       onMouseEnter={() => onHoverChange(true)}
@@ -112,9 +110,17 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
 
         {/* User */}
         <div className="mt-1 flex items-center gap-3 overflow-hidden rounded-lg px-1 py-1.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-3)] text-xs font-semibold text-[var(--color-accent)]">
-            {inicial}
-          </span>
+          <div className="relative h-8 w-8 shrink-0">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-px -z-10 rounded-full bg-[var(--color-glow-blue)] opacity-[0.22] blur-sm"
+            />
+            <img
+              src="/usuario-generico.svg"
+              alt="Usuário"
+              className="h-8 w-8 rounded-full border border-[var(--color-glow-blue)]/22 bg-[var(--color-surface-3)] object-cover"
+            />
+          </div>
           <div
             className={cn(
               "min-w-0 flex-1 transition-opacity duration-200",

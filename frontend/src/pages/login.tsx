@@ -34,11 +34,13 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] p-6">
-      {/* Outer block with glow border */}
-      <div
-        className="relative w-full max-w-5xl overflow-hidden rounded-3xl animate-enter"
-      >
-        <div className="flex min-h-[680px] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      {/* Outer block with hover glow border */}
+      <div className="group relative w-full max-w-5xl rounded-3xl animate-enter">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-px -z-10 rounded-3xl bg-[var(--color-glow-blue)] opacity-0 blur-sm transition-opacity duration-500 ease-in-out group-hover:opacity-[0.22]"
+        />
+        <div className="flex min-h-[680px] overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors duration-500 ease-in-out hover:border-[var(--color-glow-blue)]/22">
           {/* Left column — hero image */}
           <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden rounded-l-3xl">
             <img
