@@ -11,16 +11,13 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Global top bar */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center border-b border-[var(--color-border)] bg-[#050810] px-5">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-[var(--color-border)] bg-[#050810] px-5">
         <div className="flex items-center gap-3">
           <img
-            src="/logo-sentinel-corvo.svg"
+            src="/logo-sentinel-topo.svg"
             alt="Sentinel"
-            className="h-12 w-auto"
+            className="h-10 w-auto"
           />
-          <span className="text-3xl font-bold tracking-tight text-[var(--color-foreground)]">
-            Sentinel
-          </span>
         </div>
       </header>
 
@@ -34,7 +31,7 @@ export function AppLayout() {
 
       {/* Main content */}
       <div
-        className="flex min-h-screen flex-col pt-20 transition-[margin] duration-200"
+        className="flex min-h-screen flex-col pt-16 transition-[margin] duration-200"
         style={{ marginLeft }}
       >
         <Outlet />

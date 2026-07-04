@@ -43,7 +43,7 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] pt-20",
+        "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] pt-16",
         "transition-[width] duration-200 ease-out",
       )}
       style={{ width: expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W }}
