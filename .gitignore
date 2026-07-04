@@ -143,3 +143,5 @@ __v0_jsx-dev-runtime.ts
 *.pptx
 node_modules/
 .next/
+
+eda_output
