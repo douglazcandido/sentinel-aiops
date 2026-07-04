@@ -82,7 +82,7 @@ export interface PrevisaoData {
 }
 
 // ===== Risco OLA =====
-export type ClasseRisco = "Baixo" | "Medio" | "Alto"
+export type ClasseRisco = 'Baixo' | 'Medio' | 'Alto'
 
 export interface DistribuicaoRisco {
   classe_risco: ClasseRisco
@@ -101,12 +101,18 @@ export interface KpiOla {
   pct_projetado_meta: number | null
 }
 
+export interface FeatureImportance {
+  feature: string
+  importancia: number
+  ranking: number
+}
+
 export interface RiscoData {
   distribuicao_risco: DistribuicaoRisco[]
   kpis_ola: KpiOla[]
+  feature_importance: FeatureImportance[]
 }
 
-// ===== Clusters =====
 export interface Cluster {
   cluster_id: number
   descricao: string | null
@@ -124,7 +130,7 @@ export interface ClustersData {
 }
 
 // ===== Recomendações =====
-export type TipoRecomendacao = "equipe" | "janela_critica" | "produto_recorrente"
+export type TipoRecomendacao = 'equipe' | 'janela_critica' | 'produto_recorrente'
 
 export interface Recomendacao {
   id: number

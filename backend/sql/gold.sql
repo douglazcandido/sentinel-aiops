@@ -134,6 +134,15 @@ CREATE TABLE IF NOT EXISTS gold.risco_ola_kpi (
     UNIQUE (ano, prioridade_id)
 );
 
+-- Random Forest: importancia de cada variavel no modelo (explicabilidade)
+CREATE TABLE IF NOT EXISTS gold.modelo_feature_importance (
+    id BIGSERIAL PRIMARY KEY,
+    feature TEXT NOT NULL,          -- label legivel da variavel
+    importancia NUMERIC(6,4) NOT NULL, -- peso no modelo (0.0000 a 1.0000)
+    ranking SMALLINT NOT NULL,      -- posicao no ranking (1 = mais importante)
+    gerado_em TIMESTAMP DEFAULT now()
+);
+
 -- K-Means: perfil de cada cluster
 CREATE TABLE IF NOT EXISTS gold.cluster_perfil (
     id BIGSERIAL PRIMARY KEY,
@@ -185,6 +194,9 @@ CREATE INDEX IF NOT EXISTS idx_gold_risco_incidente_risco
 
 CREATE INDEX IF NOT EXISTS idx_gold_risco_kpi_ano
     ON gold.risco_ola_kpi (ano, prioridade_id);
+
+CREATE INDEX IF NOT EXISTS idx_gold_feature_importance_ranking
+    ON gold.modelo_feature_importance (ranking);
 
 CREATE INDEX IF NOT EXISTS idx_gold_cluster_incidente
     ON gold.cluster_incidente (cluster_id);

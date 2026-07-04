@@ -1,12 +1,18 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from app.core.config import DATABASE_URL
 from app.core.logger import setup_logger
-from app.models.gold_models import DimGrupo, DimPrioridade, RiscoOlaIncidente, RiscoOlaKpi
+from app.models.gold_models import (
+    DimGrupo,
+    DimPrioridade,
+    ModeloFeatureImportance,
+    RiscoOlaIncidente,
+    RiscoOlaKpi,
+)
 
 logger = setup_logger(__name__)
 
@@ -23,26 +29,41 @@ FEATURES = [
     'duracao_segundos_capped',
 ]
 
+# labels legíveis para cada feature — usados na tabela gold e no frontend
+FEATURES_LABEL = {
+    'prioridade_codigo':        'Prioridade',
+    'abertura_hora':            'Hora de abertura',
+    'abertura_dia_semana':      'Dia da semana',
+    'abertura_mes':             'Mês de abertura',
+    'abertura_ano':             'Ano de abertura',
+    'abertura_fim_de_semana':   'Fim de semana',
+    'abertura_fora_horario':    'Fora do horário comercial',
+    'aberto_automaticamente':   'Abertura automática',
+    'tem_incidente_pai':        'Possui incidente pai',
+    'duracao_segundos_capped':  'Duração (s)',
+}
+
 LIMIAR_MEDIO = 0.3
 LIMIAR_ALTO  = 0.6
 
 METAS_P2 = [
-    (0, 30, 'abaixo de 31 = 150%', 150.0),
-    (31, 35, '31-35 = 125%', 125.0),
-    (36, 39, '36-39 = 110%', 110.0),
-    (40, 45, '40-45 = 75%', 75.0),
-    (46, 53, '46-53 = 50%', 50.0),
-    (54, 9999, 'acima de 53 = 0%', 0.0),
+    (0,  30,   'abaixo de 31 = 150%', 150.0),
+    (31, 35,   '31-35 = 125%',        125.0),
+    (36, 39,   '36-39 = 110%',        110.0),
+    (40, 45,   '40-45 = 75%',          75.0),
+    (46, 53,   '46-53 = 50%',          50.0),
+    (54, 9999, 'acima de 53 = 0%',      0.0),
 ]
 
 METAS_P3 = [
-    (0, 200, 'abaixo de 201 = 150%', 150.0),
-    (201, 230, '201-230 = 125%', 125.0),
-    (231, 263, '231-263 = 110%', 110.0),
-    (264, 290, '264-290 = 75%', 75.0),
-    (291, 320, '291-320 = 50%', 50.0),
-    (321, 9999, 'acima de 320 = 0%', 0.0),
+    (0,   200,  'abaixo de 201 = 150%', 150.0),
+    (201, 230,  '201-230 = 125%',       125.0),
+    (231, 263,  '231-263 = 110%',       110.0),
+    (264, 290,  '264-290 = 75%',         75.0),
+    (291, 320,  '291-320 = 50%',         50.0),
+    (321, 9999, 'acima de 320 = 0%',      0.0),
 ]
+
 
 def fetch_dados(engine) -> pd.DataFrame:
     logger.info('buscando dados do silver para o random forest')
@@ -95,7 +116,7 @@ def preparar_dados(df: pd.DataFrame):
     df_2025 = df_2025.sort_values('abertura_data').reset_index(drop=True)
     corte = int(len(df_2025) * 0.8)
     treino = df_2025.iloc[:corte]
-    teste = df_2025.iloc[corte:]
+    teste  = df_2025.iloc[corte:]
 
     logger.info('treino: %d linhas | teste: %d linhas', len(treino), len(teste))
     logger.info(
@@ -106,10 +127,11 @@ def preparar_dados(df: pd.DataFrame):
 
     X_treino = treino[FEATURES]
     y_treino = treino['kpi_violado']
-    X_teste = teste[FEATURES]
-    y_teste = teste['kpi_violado']
+    X_teste  = teste[FEATURES]
+    y_teste  = teste['kpi_violado']
 
     return X_treino, y_treino, X_teste, y_teste, teste
+
 
 def treinar_random_forest(X_treino, y_treino) -> RandomForestClassifier:
     logger.info('treinando random forest')
@@ -123,6 +145,7 @@ def treinar_random_forest(X_treino, y_treino) -> RandomForestClassifier:
     model.fit(X_treino, y_treino)
     logger.info('random forest treinado com sucesso')
     return model
+
 
 def avaliar_modelo(model: RandomForestClassifier, X_teste, y_teste) -> None:
     y_pred = model.predict(X_teste)
@@ -154,6 +177,30 @@ def sincronizar_dim_grupo(grupos: list, session: Session) -> None:
     logger.info('dim_grupo sincronizada: %d grupos', len(grupos))
 
 
+def salvar_feature_importance(model: RandomForestClassifier, session: Session) -> None:
+    logger.info('salvando feature importance no gold')
+
+    # limpa registros anteriores para garantir idempotencia
+    session.query(ModeloFeatureImportance).delete()
+    session.commit()
+
+    importancias = sorted(
+        zip(FEATURES, model.feature_importances_),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+
+    for ranking, (feature, importancia) in enumerate(importancias, start=1):
+        session.add(ModeloFeatureImportance(
+            feature=FEATURES_LABEL.get(feature, feature),
+            importancia=round(float(importancia), 4),
+            ranking=ranking,
+        ))
+
+    session.commit()
+    logger.info('feature importance salva: %d features', len(importancias))
+
+
 def salvar_resultados(df_teste: pd.DataFrame, probabilidades, session: Session) -> None:
     logger.info('salvando risco por incidente no gold')
 
@@ -174,16 +221,17 @@ def salvar_resultados(df_teste: pd.DataFrame, probabilidades, session: Session) 
             existente.classe_risco = classificar_risco(prob)
         else:
             session.add(RiscoOlaIncidente(
-                numero = row['numero'],
-                prioridade_id = dim_prioridade.get(prioridade_codigo),
-                grupo_id = dim_grupo.get(row['grupo_nome']),
-                probabilidade_violacao = round(prob, 4),
-                classe_risco = classificar_risco(prob),
-                abertura_data = row['abertura_data'],
+                numero=row['numero'],
+                prioridade_id=dim_prioridade.get(prioridade_codigo),
+                grupo_id=dim_grupo.get(row['grupo_nome']),
+                probabilidade_violacao=round(prob, 4),
+                classe_risco=classificar_risco(prob),
+                abertura_data=row['abertura_data'],
             ))
 
     session.commit()
     logger.info('risco por incidente salvo: %d registros', len(df_teste))
+
 
 def salvar_kpi_ola(df: pd.DataFrame, session: Session) -> None:
     logger.info('calculando e salvando kpis de ola')
@@ -202,7 +250,7 @@ def salvar_kpi_ola(df: pd.DataFrame, session: Session) -> None:
             violacoes = int(df_p['kpi_violado'].sum())
             meses_decorridos = int(df_p['abertura_data'].max().month)
             projecao = round(violacoes / meses_decorridos * 12) if meses_decorridos > 0 else violacoes
-            pct_meta, faixa  = calcular_meta(violacoes, tabela_meta)
+            pct_meta, faixa = calcular_meta(violacoes, tabela_meta)
             pct_proj, _ = calcular_meta(projecao, tabela_meta)
 
             prioridade_id = dim_prioridade.get(codigo)
@@ -220,14 +268,14 @@ def salvar_kpi_ola(df: pd.DataFrame, session: Session) -> None:
                 existente.pct_projetado_meta = pct_proj
             else:
                 session.add(RiscoOlaKpi(
-                    ano = int(ano),
-                    prioridade_id = prioridade_id,
-                    violacoes_acumuladas = violacoes,
-                    total_no_kpi = total_no_kpi,
-                    pct_atingimento_meta = pct_meta,
-                    faixa_meta = faixa,
-                    violacoes_projetadas_ano= projecao,
-                    pct_projetado_meta = pct_proj,
+                    ano=int(ano),
+                    prioridade_id=prioridade_id,
+                    violacoes_acumuladas=violacoes,
+                    total_no_kpi=total_no_kpi,
+                    pct_atingimento_meta=pct_meta,
+                    faixa_meta=faixa,
+                    violacoes_projetadas_ano=projecao,
+                    pct_projetado_meta=pct_proj,
                 ))
 
             logger.info(
@@ -236,6 +284,7 @@ def salvar_kpi_ola(df: pd.DataFrame, session: Session) -> None:
             )
 
     session.commit()
+
 
 def run() -> None:
     logger.info('=== inicio do pipeline random forest ===')
@@ -252,6 +301,7 @@ def run() -> None:
         probabilidades = model.predict_proba(X_teste)[:, 1]
 
         with Session(engine) as session:
+            salvar_feature_importance(model, session)
             salvar_resultados(df_teste, probabilidades, session)
             salvar_kpi_ola(df, session)
 
@@ -263,6 +313,7 @@ def run() -> None:
         raise
 
     logger.info('=== fim do pipeline random forest ===')
+
 
 if __name__ == '__main__':
     run()

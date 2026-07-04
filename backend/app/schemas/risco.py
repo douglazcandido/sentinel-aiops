@@ -1,11 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+
 class DistribuicaoRiscoSchema(BaseModel):
     '''Contagem de incidentes por classe de risco.'''
     classe_risco: str = Field(..., description='Classe de risco (Baixo, Medio, Alto)')
     quantidade: int = Field(..., description='Quantidade de incidentes nessa classe')
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class KpiOlaSchema(BaseModel):
     '''KPI de OLA para um ano e prioridade especificos.'''
@@ -22,6 +24,15 @@ class KpiOlaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class FeatureImportanceSchema(BaseModel):
+    '''Importancia de uma variavel no modelo Random Forest.'''
+    feature: str = Field(..., description='Nome legivel da variavel')
+    importancia: float = Field(..., description='Peso da variavel na decisao do modelo (0 a 1)')
+    ranking: int = Field(..., description='Posicao no ranking de importancia (1 = mais importante)')
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class RiscoCompletoSchema(BaseModel):
     '''Payload completo da Frente 03 - Risco de OLA.'''
     distribuicao_risco: list[DistribuicaoRiscoSchema] = Field(
@@ -29,4 +40,8 @@ class RiscoCompletoSchema(BaseModel):
     )
     kpis_ola: list[KpiOlaSchema] = Field(
         ..., description='KPIs de OLA por ano e prioridade'
+    )
+    feature_importance: list[FeatureImportanceSchema] = Field(
+        default_factory=list,
+        description='Importancia de cada variavel no modelo Random Forest',
     )

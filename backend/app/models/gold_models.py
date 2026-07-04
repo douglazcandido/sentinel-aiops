@@ -271,3 +271,17 @@ class Recomendacao(Base):
 
     def __repr__(self) -> str:
         return f'<Recomendacao(tipo={self.tipo}, titulo={self.titulo})>'
+
+
+class ModeloFeatureImportance(Base):
+    __tablename__ = 'modelo_feature_importance'
+    __table_args__ = {'schema': 'gold'}
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    feature: Mapped[str] = mapped_column(Text, nullable=False)
+    importancia: Mapped[float] = mapped_column(Numeric(6, 4), nullable=False)
+    ranking: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    gerado_em: Mapped[datetime] = mapped_column(DateTime, server_default=text('now()'))
+
+    def __repr__(self) -> str:
+        return f'<ModeloFeatureImportance(feature={self.feature}, importancia={self.importancia})>'
