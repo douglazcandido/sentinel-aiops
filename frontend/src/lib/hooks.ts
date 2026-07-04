@@ -14,6 +14,8 @@ interface AsyncState<T> {
   loading: boolean
   error: string | null
   reload: () => void
+  /** Bumped each time a fetch completes successfully; use as a React `key` to replay entrance animations on refresh. */
+  version: number
 }
 
 /** Generic data hook that re-fetches whenever `path` or serialized `params` changes. */
@@ -22,6 +24,7 @@ function useApiData<T>(path: string, params?: Record<string, unknown>): AsyncSta
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [nonce, setNonce] = useState(0)
+  const [version, setVersion] = useState(0)
   const paramsKey = JSON.stringify(params ?? {})
 
   // Keep latest params without retriggering the effect on identity changes.
@@ -34,7 +37,10 @@ function useApiData<T>(path: string, params?: Record<string, unknown>): AsyncSta
     setError(null)
     fetchData<T>(path, paramsRef.current)
       .then((d) => {
-        if (active) setData(d)
+        if (active) {
+          setData(d)
+          setVersion((v) => v + 1)
+        }
       })
       .catch((err) => {
         if (active) setError(getErrorMessage(err))
@@ -50,7 +56,7 @@ function useApiData<T>(path: string, params?: Record<string, unknown>): AsyncSta
 
   const reload = useCallback(() => setNonce((n) => n + 1), [])
 
-  return { data, loading, error, reload }
+  return { data, loading, error, reload, version }
 }
 
 export function useHistorico() {

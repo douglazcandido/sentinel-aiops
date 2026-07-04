@@ -31,14 +31,16 @@ const TIPO_LABEL: Record<TipoRecomendacao, string> = {
 
 export default function RecomendacoesPage() {
   const [filtro, setFiltro] = useState<Filtro>("todas")
-  const { data, loading, error, reload } = useRecomendacoes(filtro)
+  const { data, loading, error, reload, version } = useRecomendacoes(filtro)
 
   return (
     <>
       <Topbar
         title="Recomendações"
         subtitle="Sugestões geradas por regras de negócio"
-        lastUpdate={data ? `${data.total} sugestões` : undefined}
+        value={data ? `${data.total} sugestões geradas` : undefined}
+        onRefresh={reload}
+        refreshing={loading}
       />
       <div className="flex-1 space-y-5 p-6">
         {/* Filtros */}
@@ -63,16 +65,16 @@ export default function RecomendacoesPage() {
 
         {error ? (
           <ErrorState message={error} onRetry={reload} />
-        ) : loading ? (
+        ) : !data ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-32 w-full" />
             ))}
           </div>
-        ) : !data || data.recomendacoes.length === 0 ? (
+        ) : data.recomendacoes.length === 0 ? (
           <EmptyState message="Nenhuma recomendação gerada para este filtro ainda." />
         ) : (
-          <div key={filtro} className="grid animate-fade grid-cols-1 gap-4 lg:grid-cols-2">
+          <div key={`${filtro}-${version}`} className="grid animate-fade grid-cols-1 gap-4 lg:grid-cols-2">
             {data.recomendacoes.map((rec, i) => {
               const Icon = TIPO_ICON[rec.tipo] ?? Lightbulb
               return (

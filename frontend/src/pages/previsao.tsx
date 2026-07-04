@@ -18,7 +18,7 @@ import { usePrevisao } from "@/lib/hooks"
 import { formatInt, formatDate, formatDateShort } from "@/lib/utils"
 
 export default function PrevisaoPage() {
-  const { data, loading, error, reload } = usePrevisao()
+  const { data, loading, error, reload, version } = usePrevisao()
 
   const mediaD7 = useMemo(() => {
     if (!data?.d7?.length) return 0
@@ -55,7 +55,10 @@ export default function PrevisaoPage() {
       <Topbar
         title="Previsão"
         subtitle="Projeção de volume de incidentes — modelo NeuralProphet"
-        lastUpdate={d1 ? formatDate(d1.data_referencia) : undefined}
+        label="Última atualização:"
+        value={d1 ? formatDate(d1.data_referencia) : undefined}
+        onRefresh={reload}
+        refreshing={loading}
       />
       <div className="flex-1 space-y-5 p-6">
         {error ? (
@@ -65,13 +68,13 @@ export default function PrevisaoPage() {
             {/* Card grande D+1 */}
             <Card index={0} className="lg:col-span-1">
               <CardHeader title="Previsão D+1" subtitle="Próximo dia" icon={<TrendingUp className="h-4 w-4" />} />
-              {loading || !d1 ? (
+              {!d1 ? (
                 <>
                   <Skeleton className="h-14 w-40" />
                   <Skeleton className="mt-4 h-4 w-48" />
                 </>
               ) : (
-                <div className="flex h-[calc(100%-3rem)] flex-col justify-center">
+                <div key={version} className="flex h-[calc(100%-3rem)] flex-col justify-center animate-fade">
                   <div className="tnum text-5xl font-semibold tracking-tight text-[var(--color-foreground)]">
                     {formatInt(d1.total_previsto)}
                   </div>
@@ -119,10 +122,10 @@ export default function PrevisaoPage() {
 
             {/* D+7 área */}
             <div className="lg:col-span-2">
-              {loading || !data ? (
+              {!data ? (
                 <ChartSkeleton height={300} />
               ) : (
-                <Card index={1}>
+                <Card key={version} index={1}>
                   <CardHeader
                     title="Previsão D+7"
                     subtitle={

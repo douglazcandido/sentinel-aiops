@@ -4,6 +4,9 @@ import {
   Bot,
   UserX,
   OctagonAlert,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -28,15 +31,27 @@ import { CHART_COLORS, axisProps, ChartTooltip } from "@/components/chart-theme"
 import { useHistorico } from "@/lib/hooks"
 import {
   abbreviateNumber,
+  cn,
   formatInt,
   formatPct,
   formatDate,
   diaSemanaCurto,
   mesLabel,
 } from "@/lib/utils"
-import type { VolumeMensal, ViolacaoMensal } from "@/lib/types"
+import type { VolumeMensal, ViolacaoMensal, VolumePorGrupo } from "@/lib/types"
 
 const PRIORIDADE_CORES = [CHART_COLORS.high, CHART_COLORS.med, CHART_COLORS.accent, CHART_COLORS.low]
+
+type GrupoCol = keyof VolumePorGrupo
+type SortDir = "asc" | "desc"
+
+const GRUPO_COLUNAS: { key: GrupoCol; label: string; alignRight: boolean }[] = [
+  { key: "grupo_nome", label: "Grupo", alignRight: false },
+  { key: "total_incidentes", label: "Incidentes", alignRight: true },
+  { key: "total_no_kpi", label: "No KPI", alignRight: true },
+  { key: "total_violacoes", label: "Violações", alignRight: true },
+  { key: "pct_sem_intervencao", label: "Sem intervenção", alignRight: false },
+]
 
 /** Pivot monthly rows (split by priority) into chart points keyed by "Mês/AA". */
 function pivotMensal<T extends { ano: number; mes: number; prioridade_label: string }>(
@@ -59,8 +74,32 @@ function pivotMensal<T extends { ano: number; mes: number; prioridade_label: str
 }
 
 export default function HistoricoPage() {
-  const { data, loading, error, reload } = useHistorico()
+  const { data, loading, error, reload, version } = useHistorico()
   const [prioMensal, setPrioMensal] = useState<Set<string>>(new Set())
+  const [grupoSort, setGrupoSort] = useState<{ col: GrupoCol; dir: SortDir }>({
+    col: "total_incidentes",
+    dir: "desc",
+  })
+
+  function toggleGrupoSort(col: GrupoCol) {
+    setGrupoSort((prev) =>
+      prev.col === col
+        ? { col, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { col, dir: col === "grupo_nome" ? "asc" : "desc" },
+    )
+  }
+
+  const grupoOrdenado = useMemo(() => {
+    if (!data) return []
+    const { col, dir } = grupoSort
+    const sinal = dir === "asc" ? 1 : -1
+    return [...data.volume_por_grupo].sort((a, b) => {
+      const va = a[col]
+      const vb = b[col]
+      const cmp = typeof va === "string" ? va.localeCompare(vb as string) : (va as number) - (vb as number)
+      return cmp * sinal
+    })
+  }, [data, grupoSort])
 
   const prioridades = useMemo(
     () => (data ? Array.from(new Set(data.volume_mensal.map((r) => r.prioridade_label))) : []),
@@ -102,7 +141,10 @@ export default function HistoricoPage() {
       <Topbar
         title="Histórico"
         subtitle="Análise exploratória e agregações dos incidentes"
-        lastUpdate={k ? formatDate(k.periodo_fim) : undefined}
+        label="Última atualização:"
+        value={k ? formatDate(k.periodo_fim) : undefined}
+        onRefresh={reload}
+        refreshing={loading}
       />
       <div className="flex-1 space-y-5 p-6">
         {error ? (
@@ -110,8 +152,8 @@ export default function HistoricoPage() {
         ) : (
           <>
             {/* KPIs */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {loading || !k ? (
+            <div key={`kpis-${version}`} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {!k ? (
                 Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
               ) : (
                 <>
@@ -151,8 +193,8 @@ export default function HistoricoPage() {
             </div>
 
             {/* Hora + Dia */}
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {loading || !data ? (
+            <div key={`hora-dia-${version}`} className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {!data ? (
                 <>
                   <ChartSkeleton />
                   <ChartSkeleton />
@@ -260,10 +302,10 @@ export default function HistoricoPage() {
             </div>
 
             {/* Mensal: volume + violações com filtro de prioridade */}
-            {loading || !data ? (
+            {!data ? (
               <ChartSkeleton height={300} />
             ) : (
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <div key={`mensal-${version}`} className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                 <Card index={0}>
                   <CardHeader
                     title="Volume mensal por prioridade"
@@ -380,13 +422,15 @@ export default function HistoricoPage() {
             )}
 
             {/* Volume por grupo */}
-            {loading || !data ? (
+            {!data ? (
               <ChartSkeleton height={300} />
             ) : (
-              <Card index={0}>
+              <Card key={`grupo-${version}`} index={0}>
                 <CardHeader
                   title="Volume por equipe / grupo"
-                  subtitle="Ordenado por total de incidentes"
+                  subtitle={`Ordenado por ${
+                    GRUPO_COLUNAS.find((c) => c.key === grupoSort.col)?.label
+                  } (${grupoSort.dir === "asc" ? "crescente" : "decrescente"})`}
                 />
                 {data.volume_por_grupo.length === 0 ? (
                   <EmptyState message="Nenhum grupo encontrado." />
@@ -395,17 +439,44 @@ export default function HistoricoPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-left text-xs text-[var(--color-muted)]">
-                          <th className="pb-2 pr-4 font-medium">Grupo</th>
-                          <th className="pb-2 pr-4 text-right font-medium">Incidentes</th>
-                          <th className="pb-2 pr-4 text-right font-medium">No KPI</th>
-                          <th className="pb-2 pr-4 text-right font-medium">Violações</th>
-                          <th className="min-w-[160px] pb-2 font-medium">Sem intervenção</th>
+                          {GRUPO_COLUNAS.map((c) => {
+                            const active = grupoSort.col === c.key
+                            return (
+                              <th
+                                key={c.key}
+                                className={cn(
+                                  "pb-2 pr-4 font-medium",
+                                  c.alignRight && "text-right",
+                                  c.key === "pct_sem_intervencao" && "min-w-[160px]",
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => toggleGrupoSort(c.key)}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 transition-colors hover:text-[var(--color-foreground)]",
+                                    c.alignRight && "flex-row-reverse",
+                                    active && "text-[var(--color-accent)]",
+                                  )}
+                                >
+                                  {c.label}
+                                  {active ? (
+                                    grupoSort.dir === "asc" ? (
+                                      <ArrowUp className="h-3 w-3" />
+                                    ) : (
+                                      <ArrowDown className="h-3 w-3" />
+                                    )
+                                  ) : (
+                                    <ArrowUpDown className="h-3 w-3 opacity-40" />
+                                  )}
+                                </button>
+                              </th>
+                            )
+                          })}
                         </tr>
                       </thead>
                       <tbody>
-                        {[...data.volume_por_grupo]
-                          .sort((a, b) => b.total_incidentes - a.total_incidentes)
-                          .map((g, i) => (
+                        {grupoOrdenado.map((g, i) => (
                             <tr
                               key={g.grupo_nome + i}
                               className="border-b border-[var(--color-border)]/60 transition-colors hover:bg-[var(--color-surface-2)]"

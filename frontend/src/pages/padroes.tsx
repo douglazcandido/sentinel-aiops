@@ -18,7 +18,7 @@ function violacaoTone(pct: number | null) {
 }
 
 export default function PadroesPage() {
-  const { data, loading, error, reload } = useClusters()
+  const { data, loading, error, reload, version } = useClusters()
   const [sort, setSort] = useState<SortMode>("incidentes")
 
   const ordenados = useMemo(() => {
@@ -35,7 +35,9 @@ export default function PadroesPage() {
       <Topbar
         title="Padrões"
         subtitle="Agrupamentos de comportamento — K-Means"
-        lastUpdate={data ? `${data.total_clusters} clusters` : undefined}
+        value={data ? `${data.total_clusters} clusters encontrados` : undefined}
+        onRefresh={reload}
+        refreshing={loading}
       />
       <div className="flex-1 space-y-5 p-6">
         {error ? (
@@ -71,7 +73,7 @@ export default function PadroesPage() {
               </div>
             </div>
 
-            {loading ? (
+            {!data ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-44 w-full" />
@@ -80,7 +82,7 @@ export default function PadroesPage() {
             ) : ordenados.length === 0 ? (
               <EmptyState message="Nenhum cluster identificado ainda." />
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div key={version} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {ordenados.map((c, i) => (
                   <Card key={c.cluster_id} index={i} hover className="flex flex-col">
                     <div className="mb-3 flex items-start justify-between gap-2">

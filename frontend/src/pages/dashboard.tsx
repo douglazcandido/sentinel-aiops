@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { Link } from "react-router-dom"
 import {
   Database,
@@ -69,6 +69,16 @@ export default function DashboardPage() {
   const recDestaque = recs.data?.recomendacoes[0] ?? null
   const firstName = user?.nome?.split(" ")[0] ?? "Usuário"
 
+  const refreshingAll = hist.loading || prev.loading || clusters.loading || risco.loading || recs.loading
+  const reloadAll = useCallback(() => {
+    hist.reload()
+    prev.reload()
+    clusters.reload()
+    risco.reload()
+    recs.reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col gap-5 p-5">
@@ -96,18 +106,26 @@ export default function DashboardPage() {
             </div>
           </div>
           {k && (
-            <div className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-1.5 text-xs text-[var(--color-muted)]">
-              <RefreshCw className="h-3.5 w-3.5 text-[var(--color-accent)]" />
+            <button
+              type="button"
+              onClick={reloadAll}
+              disabled={refreshingAll}
+              title="Atualizar dados"
+              className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-3 py-1.5 text-xs text-[var(--color-muted)] transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)] disabled:cursor-wait"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 text-[var(--color-accent)] ${refreshingAll ? "animate-spin-slow" : ""}`}
+              />
               <span>
                 Atualizado em{" "}
                 <span className="text-[var(--color-foreground)]">{formatDate(k.periodo_fim)}</span>
               </span>
-            </div>
+            </button>
           )}
         </div>
         {/* KPIs */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {hist.loading || prev.loading || !k ? (
+        <div key={hist.version} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {!k ? (
             Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
           ) : (
             <>
@@ -165,12 +183,12 @@ export default function DashboardPage() {
                 </Link>
               }
             />
-            {clusters.loading ? (
+            {!clusters.data ? (
               <Skeleton className="h-32 w-full" />
             ) : !clusterCritico ? (
               <p className="text-sm text-[var(--color-muted)]">Sem clusters disponíveis.</p>
             ) : (
-              <div className="flex flex-1 flex-col">
+              <div key={clusters.version} className="flex flex-1 flex-col animate-fade">
                 <p className="text-sm leading-relaxed text-[var(--color-foreground)]">
                   {clusterCritico.descricao ?? `Cluster #${clusterCritico.cluster_id}`}
                 </p>
@@ -212,12 +230,12 @@ export default function DashboardPage() {
                 </Link>
               }
             />
-            {risco.loading ? (
+            {!risco.data ? (
               <Skeleton className="h-32 w-full" />
             ) : !kpiCritico ? (
               <p className="text-sm text-[var(--color-muted)]">Sem KPIs de meta.</p>
             ) : (
-              <div className="flex flex-1 flex-col">
+              <div key={risco.version} className="flex flex-1 flex-col animate-fade">
                 <div className="flex items-center gap-2">
                   <span className="tnum text-sm font-semibold text-[var(--color-foreground)]">
                     {kpiCritico.ano}
@@ -257,12 +275,12 @@ export default function DashboardPage() {
                 </Link>
               }
             />
-            {recs.loading ? (
+            {!recs.data ? (
               <Skeleton className="h-32 w-full" />
             ) : !recDestaque ? (
               <p className="text-sm text-[var(--color-muted)]">Nenhuma recomendação gerada.</p>
             ) : (
-              <div className="flex flex-1 flex-col">
+              <div key={recs.version} className="flex flex-1 flex-col animate-fade">
                 <h4 className="text-sm font-semibold text-[var(--color-foreground)]">
                   {recDestaque.titulo}
                 </h4>
