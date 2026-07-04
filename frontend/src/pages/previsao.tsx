@@ -13,7 +13,8 @@ import { Topbar } from "@/components/topbar"
 import { Card, CardHeader } from "@/components/card"
 import { ChartSkeleton, Skeleton } from "@/components/skeleton"
 import { ErrorState } from "@/components/states"
-import { CHART_COLORS, axisProps, ChartTooltip } from "@/components/chart-theme"
+import { CHART_COLORS, CHART_ANIMATION, axisProps, ChartTooltip } from "@/components/chart-theme"
+import { AnimatedNumber } from "@/components/animated-number"
 import { usePrevisao } from "@/lib/hooks"
 import { formatInt, formatDate, formatDateShort } from "@/lib/utils"
 
@@ -76,7 +77,7 @@ export default function PrevisaoPage() {
               ) : (
                 <div key={version} className="flex h-[calc(100%-3rem)] flex-col justify-center animate-fade">
                   <div className="tnum text-5xl font-semibold tracking-tight text-[var(--color-foreground)]">
-                    {formatInt(d1.total_previsto)}
+                    <AnimatedNumber value={d1.total_previsto} format={formatInt} />
                   </div>
                   <p className="mt-1 text-sm text-[var(--color-muted)]">
                     incidentes previstos para {formatDate(d1.data_referencia)}
@@ -109,7 +110,8 @@ export default function PrevisaoPage() {
                     </span>
                   </div>
                   <p className="mt-3 text-xs text-[var(--color-muted-2)]">
-                    Média prevista dos próximos 7 dias: {formatInt(mediaD7)}
+                    Média prevista dos próximos 7 dias:{" "}
+                    <AnimatedNumber value={mediaD7} format={formatInt} />
                   </p>
                   {(d1.limite_inferior != null || d1.limite_superior != null) && (
                     <p className="tnum mt-1 text-xs text-[var(--color-muted-2)]">
@@ -195,6 +197,8 @@ export default function PrevisaoPage() {
                         fill="url(#gradPrev)"
                         dot={{ r: 3, fill: CHART_COLORS.accent }}
                         activeDot={{ r: 5 }}
+                        animationDuration={CHART_ANIMATION.duration}
+                        animationEasing={CHART_ANIMATION.easing}
                       />
                     </AreaChart>
                   </ResponsiveContainer>

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 type Tone = "accent" | "high" | "med" | "low" | "neutral"
@@ -67,6 +67,14 @@ export function ProgressBar({
         : resolved === "high"
           ? "var(--color-risk-high)"
           : "var(--color-accent)"
+
+  // Mount at 0% so the width transition below plays a fill-in animation on first render.
+  const [filled, setFilled] = useState(false)
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setFilled(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   return (
     <div
       className={cn(
@@ -75,8 +83,8 @@ export function ProgressBar({
       )}
     >
       <div
-        className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${pct}%`, background: color }}
+        className="h-full rounded-full transition-all duration-700 ease-out"
+        style={{ width: filled ? `${pct}%` : "0%", background: color }}
       />
     </div>
   )

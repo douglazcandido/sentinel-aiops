@@ -25,6 +25,17 @@ export const axisProps = {
   axisLine: { stroke: CHART_COLORS.grid },
 }
 
+/** Shared entrance-animation timing for chart series (bars/lines/areas). */
+export const CHART_ANIMATION = {
+  duration: 900,
+  easing: "ease-out" as const,
+}
+
+/** Stagger offset (ms) for the i-th series in a multi-series chart, for a sequential draw-in cadence. */
+export function chartStagger(i: number, step = 140) {
+  return i * step
+}
+
 /** Shared dark tooltip wrapper used across all charts. */
 export function ChartTooltip({
   title,

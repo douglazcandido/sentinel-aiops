@@ -27,7 +27,8 @@ import { Card, CardHeader } from "@/components/card"
 import { KpiSkeleton, ChartSkeleton } from "@/components/skeleton"
 import { ErrorState, EmptyState } from "@/components/states"
 import { ProgressBar } from "@/components/badge"
-import { CHART_COLORS, axisProps, ChartTooltip } from "@/components/chart-theme"
+import { CHART_COLORS, CHART_ANIMATION, chartStagger, axisProps, ChartTooltip } from "@/components/chart-theme"
+import { AnimatedNumber } from "@/components/animated-number"
 import { useHistorico } from "@/lib/hooks"
 import {
   abbreviateNumber,
@@ -161,7 +162,7 @@ export default function HistoricoPage() {
                     index={0}
                     label="Total de Incidentes"
                     icon={<Database className="h-4 w-4" />}
-                    value={formatInt(k.total_incidentes)}
+                    value={<AnimatedNumber value={k.total_incidentes} format={formatInt} />}
                     hint={`${formatDate(k.periodo_inicio)} — ${formatDate(k.periodo_fim)}`}
                   />
                   <KpiCard
@@ -169,7 +170,7 @@ export default function HistoricoPage() {
                     tone="accent"
                     label="Abertura Automática"
                     icon={<Bot className="h-4 w-4" />}
-                    value={formatPct(k.pct_aberto_automaticamente)}
+                    value={<AnimatedNumber value={k.pct_aberto_automaticamente} format={formatPct} />}
                     hint="Incidentes abertos por automação"
                   />
                   <KpiCard
@@ -177,7 +178,7 @@ export default function HistoricoPage() {
                     tone="med"
                     label="Sem Intervenção"
                     icon={<UserX className="h-4 w-4" />}
-                    value={formatPct(k.pct_sem_intervencao)}
+                    value={<AnimatedNumber value={k.pct_sem_intervencao} format={formatPct} />}
                     hint="Resolvidos sem ação humana"
                   />
                   <KpiCard
@@ -185,7 +186,7 @@ export default function HistoricoPage() {
                     tone="high"
                     label="Violações OLA"
                     icon={<OctagonAlert className="h-4 w-4" />}
-                    value={formatInt(k.total_violacoes_ola)}
+                    value={<AnimatedNumber value={k.total_violacoes_ola} format={formatInt} />}
                     hint={`${formatInt(k.total_no_kpi)} incidentes no KPI`}
                   />
                 </>
@@ -233,7 +234,12 @@ export default function HistoricoPage() {
                             ) : null
                           }
                         />
-                        <Bar dataKey="total_incidentes" radius={[3, 3, 0, 0]}>
+                        <Bar
+                          dataKey="total_incidentes"
+                          radius={[3, 3, 0, 0]}
+                          animationDuration={CHART_ANIMATION.duration}
+                          animationEasing={CHART_ANIMATION.easing}
+                        >
                           {data.volume_por_hora.map((h, i) => (
                             <Cell
                               key={i}
@@ -281,7 +287,12 @@ export default function HistoricoPage() {
                             ) : null
                           }
                         />
-                        <Bar dataKey="total_incidentes" radius={[3, 3, 0, 0]}>
+                        <Bar
+                          dataKey="total_incidentes"
+                          radius={[3, 3, 0, 0]}
+                          animationDuration={CHART_ANIMATION.duration}
+                          animationEasing={CHART_ANIMATION.easing}
+                        >
                           {data.volume_por_dia_semana.map((d, i) => (
                             <Cell
                               key={i}
@@ -367,6 +378,9 @@ export default function HistoricoPage() {
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 4 }}
+                            animationDuration={CHART_ANIMATION.duration}
+                            animationEasing={CHART_ANIMATION.easing}
+                            animationBegin={chartStagger(i)}
                           />
                         ) : null,
                       )}
@@ -412,6 +426,9 @@ export default function HistoricoPage() {
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 4 }}
+                            animationDuration={CHART_ANIMATION.duration}
+                            animationEasing={CHART_ANIMATION.easing}
+                            animationBegin={chartStagger(i)}
                           />
                         ) : null,
                       )}

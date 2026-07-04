@@ -17,6 +17,7 @@ import { KpiCard } from "@/components/kpi-card"
 import { Card, CardHeader } from "@/components/card"
 import { KpiSkeleton, Skeleton } from "@/components/skeleton"
 import { Badge, prioridadeTone, ProgressBar } from "@/components/badge"
+import { AnimatedNumber } from "@/components/animated-number"
 import { useHistorico, usePrevisao, useClusters, useRisco, useRecomendacoes } from "@/lib/hooks"
 import {
   formatInt,
@@ -133,7 +134,7 @@ export default function DashboardPage() {
                 index={0}
                 label="Total de Incidentes"
                 icon={<Database className="h-4 w-4" />}
-                value={formatInt(k.total_incidentes)}
+                value={<AnimatedNumber value={k.total_incidentes} format={formatInt} />}
                 hint="Histórico completo"
               />
               <KpiCard
@@ -141,7 +142,7 @@ export default function DashboardPage() {
                 tone="accent"
                 label="Sem Intervenção"
                 icon={<UserX className="h-4 w-4" />}
-                value={formatPct(k.pct_sem_intervencao)}
+                value={<AnimatedNumber value={k.pct_sem_intervencao} format={formatPct} />}
                 hint="Automação sem ação humana"
               />
               <KpiCard
@@ -149,7 +150,7 @@ export default function DashboardPage() {
                 tone="high"
                 label="Violações OLA"
                 icon={<OctagonAlert className="h-4 w-4" />}
-                value={formatInt(k.total_violacoes_ola)}
+                value={<AnimatedNumber value={k.total_violacoes_ola} format={formatInt} />}
                 hint={`${formatInt(k.total_no_kpi)} no KPI`}
               />
               <KpiCard
@@ -157,7 +158,13 @@ export default function DashboardPage() {
                 tone="low"
                 label="Previsão D+1"
                 icon={<TrendingUp className="h-4 w-4" />}
-                value={prev.data ? formatInt(prev.data.d1.total_previsto) : "—"}
+                value={
+                  prev.data ? (
+                    <AnimatedNumber value={prev.data.d1.total_previsto} format={formatInt} />
+                  ) : (
+                    "—"
+                  )
+                }
                 hint={
                   prev.data ? `Para ${formatDate(prev.data.d1.data_referencia)}` : "Sem previsão"
                 }
