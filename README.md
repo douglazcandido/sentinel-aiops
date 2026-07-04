@@ -71,8 +71,8 @@ fiap-sentinel/
 │   ├── app/                  # FastAPI: rotas, schemas, services, modelos ORM
 │   ├── pipeline/             # Ingestão, limpeza, agregação e treino dos modelos
 │   ├── scripts/              # Utilitários (ex: criação de usuário)
-│   ├── sql/                  # Scripts DDL (schemas Silver, Gold, autenticação)
-│   ├── data/                 # Dataset de origem (não versionado)
+│   ├── sql/                  # Scripts DDL (schemas Bronze, Silver, Gold, autenticação)
+│   ├── data/                 # Dataset de origem (LW-DATASET.xlsx, versionado no repositório)
 │   ├── Dockerfile
 │   ├── .env.example
 │   └── requirements.txt
