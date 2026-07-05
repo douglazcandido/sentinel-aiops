@@ -30,7 +30,7 @@ O Sentinel é um MVP completo, de ponta a ponta: pipeline de dados, três modelo
 |---|---|---|
 | Histórico | Agregações EDA | Como o volume de incidentes se comporta por hora, dia e equipe |
 | Previsão | NeuralProphet | Quantos incidentes esperar amanhã (D+1) e na próxima semana (D+7) |
-| Risco de OLA | Random Forest | Qual a probabilidade de um incidente violar o acordo de nível operacional |
+| Risco de OLA | Random Forest + Explicabilidade | Qual a probabilidade de violação e quais variáveis mais influenciam a decisão do modelo |
 | Padrões | K-Means | Quais combinações de equipe, horário e prioridade formam clusters de risco |
 | Recomendações | Regras de negócio | Onde agir: reforço de equipe, janelas críticas, categorias recorrentes |
 
@@ -72,7 +72,7 @@ fiap-sentinel/
 │   ├── pipeline/             # Ingestão, limpeza, agregação e treino dos modelos
 │   ├── scripts/              # Utilitários (ex: criação de usuário)
 │   ├── sql/                  # Scripts DDL (schemas Bronze, Silver, Gold, autenticação)
-│   ├── data/                 # Dataset de origem (LW-DATASET.xlsx, versionado no repositório)
+│   ├── data/                 # Dataset de origem (LW-DATASET.xlsx)
 │   ├── Dockerfile
 │   ├── .env.example
 │   └── requirements.txt
@@ -143,6 +143,7 @@ Algumas decisões de modelagem valem registro, já que refletem limitações rea
 - **P1-Crítica tem apenas 1 registro** na base de 122 mil incidentes. O desafio exige análise obrigatória de P2 e P3, que é onde o volume e a relevância de OLA realmente se concentram — P1 foi tratada como exceção estatística, não como erro.
 - **O Random Forest tem recall baixo para a classe "Violado"**, mesmo com balanceamento de classes. O desbalanceamento é extremo (188 violações para quase 20 mil casos não violados no conjunto de treino) — é uma limitação estrutural dos dados, documentada e aceita como tal no MVP.
 - **Métricas de atingimento de meta acima de 100%** (ex: 150%) indicam superação da meta, não violação dela — o cálculo usa faixas de excelência onde menos violações geram percentual maior, inspirado em sistemas de bônus corporativos.
+- **Explicabilidade do Random Forest**: a variável "Duração (s)" responde por 76,5% da importância do modelo — incidentes que já acumulam tempo elevado têm probabilidade significativamente maior de violar o OLA. As demais variáveis relevantes são hora de abertura (5,9%), mês (5,3%) e prioridade (4,2%).
 
 ## Equipe
 
