@@ -66,7 +66,7 @@ O pipeline de dados segue arquitetura medalhão (Bronze → Silver → Gold), is
 ## Estrutura do repositório
 
 ```
-fiap-sentinel/
+sentinel-aiops/
 ├── backend/
 │   ├── app/                  # FastAPI: rotas, schemas, services, modelos ORM
 │   ├── pipeline/             # Ingestão, limpeza, agregação e treino dos modelos
@@ -103,8 +103,8 @@ Docker e Docker Compose instalados.
 ### 1. Subir a infraestrutura
 
 ```bash
-git clone https://github.com/<seu-usuario>/fiap-sentinel.git
-cd fiap-sentinel
+git clone https://github.com/<seu-usuario>/sentinel-aiops.git
+cd sentinel-aiops
 docker compose up -d --build
 ```
 
