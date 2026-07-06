@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import { api, TOKEN_KEY, USER_KEY, getErrorMessage } from "./api"
+import { markLoginToastPending } from "./notifications"
 import type { ApiEnvelope, LoginResponse, Usuario } from "./types"
 
 interface AuthContextValue {
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const usuario: Usuario = { nome, email: userEmail }
       localStorage.setItem(TOKEN_KEY, access_token)
       localStorage.setItem(USER_KEY, JSON.stringify(usuario))
+      markLoginToastPending()
       setToken(access_token)
       setUser(usuario)
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Outlet } from "react-router-dom"
 import { Sidebar, SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "./sidebar"
+import { NotificationCenter } from "./notification-bell"
 
 export function AppLayout() {
   const [hovered, setHovered] = useState(false)
@@ -11,7 +12,7 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Global top bar */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-[var(--color-border)] bg-[#050810] px-5">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[#050810] px-5">
         <div className="flex items-center gap-3">
           <img
             src="/logo-sentinel-topo.svg"
@@ -19,6 +20,7 @@ export function AppLayout() {
             className="h-10 w-auto"
           />
         </div>
+        <NotificationCenter />
       </header>
 
       {/* Sidebar */}

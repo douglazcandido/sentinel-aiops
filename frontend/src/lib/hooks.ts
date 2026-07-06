@@ -80,3 +80,31 @@ export function useRecomendacoes(tipo?: TipoRecomendacao | "todas") {
   const params = tipo && tipo !== "todas" ? { tipo } : undefined
   return useApiData<RecomendacoesData>("/api/v1/recomendacoes", params)
 }
+
+/** Polls the recomendações endpoint in the background to feed the notification bell. */
+export function useNotificacoes(pollMs = 120_000) {
+  const [data, setData] = useState<RecomendacoesData | null>(null)
+
+  useEffect(() => {
+    let active = true
+
+    const load = () => {
+      fetchData<RecomendacoesData>("/api/v1/recomendacoes")
+        .then((d) => {
+          if (active) setData(d)
+        })
+        .catch(() => {
+          // Silent: the bell simply won't update until the next successful poll.
+        })
+    }
+
+    load()
+    const id = setInterval(load, pollMs)
+    return () => {
+      active = false
+      clearInterval(id)
+    }
+  }, [pollMs])
+
+  return { data }
+}
