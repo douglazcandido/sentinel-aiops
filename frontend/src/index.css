@@ -1,29 +1,23 @@
 @import "tailwindcss";
-
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-
   /* Base surfaces */
   --color-background: #0a0e14;
   --color-surface: #11161f;
   --color-surface-2: #161b24;
   --color-surface-3: #1c222d;
-
   /* Text */
   --color-foreground: #e6e9ef;
   --color-muted: #8b94a3;
   --color-muted-2: #5c6473;
-
   /* Borders */
   --color-border: #232a36;
   --color-border-strong: #2e3744;
-
   /* Accent - cyan tech */
   --color-accent: #22d3ee;
   --color-accent-2: #0ea5e9;
   --color-accent-soft: rgba(34, 211, 238, 0.12);
   --color-glow-blue: #38bdf8;
-
   /* Semantic status */
   --color-risk-high: #f43f5e;
   --color-risk-high-soft: rgba(244, 63, 94, 0.14);
@@ -31,10 +25,8 @@
   --color-risk-med-soft: rgba(245, 158, 11, 0.14);
   --color-risk-low: #10b981;
   --color-risk-low-soft: rgba(16, 185, 129, 0.14);
-
   --radius: 0.75rem;
 }
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -55,7 +47,6 @@
     box-sizing: border-box;
   }
 }
-
 @layer utilities {
   .tnum {
     font-variant-numeric: tabular-nums;
@@ -65,7 +56,6 @@
     box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 0 24px -4px rgba(34, 211, 238, 0.35);
   }
 }
-
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
@@ -82,7 +72,6 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3a4453;
 }
-
 /* Animations */
 @keyframes fade-slide-up {
   from {
@@ -97,7 +86,6 @@
 .animate-enter {
   animation: fade-slide-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -109,7 +97,6 @@
 .animate-fade {
   animation: fade-in 0.35s ease both;
 }
-
 @keyframes pulse-soft {
   0%,
   100% {
@@ -119,10 +106,25 @@
     opacity: 0.45;
   }
 }
-.animate-skeleton {
-  animation: pulse-soft 1.5s ease-in-out infinite;
+/* Shimmer skeleton — gradiente que percorre o elemento da esquerda para direita */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
-
+.animate-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-3) 25%,
+    #252d3a 50%,
+    var(--color-surface-3) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);
