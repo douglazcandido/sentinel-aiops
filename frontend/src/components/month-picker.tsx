@@ -65,9 +65,10 @@ export function MonthPicker({ value, onChange, mesesDisponiveis }: MonthPickerPr
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+          "hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]",
           value
             ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
-            : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-foreground)] hover:border-[var(--color-border-strong)]",
+            : "border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-foreground)]",
         )}
       >
         <Calendar className="h-3.5 w-3.5" />
