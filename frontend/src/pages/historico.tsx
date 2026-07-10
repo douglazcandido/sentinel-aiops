@@ -29,6 +29,7 @@ import { ErrorState, EmptyState } from "@/components/states"
 import { ProgressBar } from "@/components/badge"
 import { CHART_COLORS, CHART_ANIMATION, chartStagger, axisProps, ChartTooltip } from "@/components/chart-theme"
 import { AnimatedNumber } from "@/components/animated-number"
+import { MonthPicker, type PeriodoFiltro } from "@/components/month-picker"
 import { useHistorico } from "@/lib/hooks"
 import {
   abbreviateNumber,
@@ -77,10 +78,20 @@ function pivotMensal<T extends { ano: number; mes: number; prioridade_label: str
 export default function HistoricoPage() {
   const { data, loading, error, reload, version } = useHistorico()
   const [prioMensal, setPrioMensal] = useState<Set<string>>(new Set())
+  const [periodo, setPeriodo] = useState<PeriodoFiltro | null>(null)
   const [grupoSort, setGrupoSort] = useState<{ col: GrupoCol; dir: SortDir }>({
     col: "total_incidentes",
     dir: "desc",
   })
+
+  const mesesPorAno = useMemo(() => {
+    const map = new Map<number, Set<number>>()
+    data?.volume_mensal.forEach((r) => {
+      if (!map.has(r.ano)) map.set(r.ano, new Set())
+      map.get(r.ano)!.add(r.mes)
+    })
+    return map
+  }, [data])
 
   function toggleGrupoSort(col: GrupoCol) {
     setGrupoSort((prev) =>
@@ -116,14 +127,40 @@ export default function HistoricoPage() {
     })
   }
 
+  const volumeMensalFiltrado = useMemo(() => {
+    if (!data) return []
+    if (!periodo) return data.volume_mensal
+    return data.volume_mensal.filter(
+      (r) => r.ano === periodo.ano && (periodo.mes === null || r.mes === periodo.mes),
+    )
+  }, [data, periodo])
+
+  const violacoesMensalFiltrado = useMemo(() => {
+    if (!data) return []
+    if (!periodo) return data.violacoes_mensal
+    return data.violacoes_mensal.filter(
+      (r) => r.ano === periodo.ano && (periodo.mes === null || r.mes === periodo.mes),
+    )
+  }, [data, periodo])
+
   const volumeMensal = useMemo(
-    () => (data ? pivotMensal<VolumeMensal>(data.volume_mensal, "total_incidentes", prioMensal) : null),
-    [data, prioMensal],
+    () => (data ? pivotMensal<VolumeMensal>(volumeMensalFiltrado, "total_incidentes", prioMensal) : null),
+    [data, volumeMensalFiltrado, prioMensal],
   )
   const violacoesMensal = useMemo(
     () =>
-      data ? pivotMensal<ViolacaoMensal>(data.violacoes_mensal, "total_violacoes", prioMensal) : null,
-    [data, prioMensal],
+      data
+        ? pivotMensal<ViolacaoMensal>(violacoesMensalFiltrado, "total_violacoes", prioMensal)
+        : null,
+    [data, violacoesMensalFiltrado, prioMensal],
+  )
+
+  const totalIncidentesPeriodo = useMemo(
+    () =>
+      periodo
+        ? volumeMensalFiltrado.reduce((s, r) => s + r.total_incidentes, 0)
+        : (data?.kpis_gerais.total_incidentes ?? 0),
+    [periodo, volumeMensalFiltrado, data],
   )
 
   const maxHora = useMemo(
@@ -146,6 +183,13 @@ export default function HistoricoPage() {
         value={k ? formatDate(k.periodo_fim) : undefined}
         onRefresh={reload}
         refreshing={loading}
+        actions={
+          <MonthPicker
+            value={periodo}
+            onChange={setPeriodo}
+            mesesDisponiveis={(ano) => mesesPorAno.get(ano) ?? new Set()}
+          />
+        }
       />
       <div className="flex-1 space-y-5 p-6">
         {error ? (
@@ -162,8 +206,14 @@ export default function HistoricoPage() {
                     index={0}
                     label="Total de Incidentes"
                     icon={<Database className="h-4 w-4" />}
-                    value={<AnimatedNumber value={k.total_incidentes} format={formatInt} />}
-                    hint={`${formatDate(k.periodo_inicio)} — ${formatDate(k.periodo_fim)}`}
+                    value={<AnimatedNumber value={totalIncidentesPeriodo} format={formatInt} />}
+                    hint={
+                      periodo
+                        ? periodo.mes
+                          ? `${mesLabel(periodo.mes)}/${periodo.ano}`
+                          : `Ano de ${periodo.ano}`
+                        : `${formatDate(k.periodo_inicio)} — ${formatDate(k.periodo_fim)}`
+                    }
                   />
                   <KpiCard
                     index={1}
@@ -207,6 +257,11 @@ export default function HistoricoPage() {
                       title="Volume por hora do dia"
                       subtitle="Distribuição de incidentes em 24h"
                     />
+                    {periodo && (
+                      <p className="-mt-3 mb-3 text-[11px] text-[var(--color-muted-2)]">
+                        Exibindo período completo — dados por hora e dia não são segmentados por mês
+                      </p>
+                    )}
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={data.volume_por_hora} margin={{ top: 8, right: 8 }}>
                         <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
@@ -261,6 +316,11 @@ export default function HistoricoPage() {
                       title="Volume por dia da semana"
                       subtitle="Segunda a Domingo"
                     />
+                    {periodo && (
+                      <p className="-mt-3 mb-3 text-[11px] text-[var(--color-muted-2)]">
+                        Exibindo período completo — dados por hora e dia não são segmentados por mês
+                      </p>
+                    )}
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={data.volume_por_dia_semana} margin={{ top: 8, right: 8 }}>
                         <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
