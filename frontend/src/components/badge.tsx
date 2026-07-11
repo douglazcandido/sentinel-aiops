@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
-type Tone = "accent" | "high" | "med" | "low" | "neutral"
+export type Tone = "accent" | "high" | "med" | "low" | "neutral"
 
 const TONE: Record<Tone, string> = {
   accent: "bg-[var(--color-accent-soft)] text-[var(--color-accent)]",

@@ -9,5 +9,8 @@ class LoginResponseData(BaseModel):
     token_type: str = Field('bearer', description='Tipo do token')
     nome: str = Field(..., description='Nome do usuario autenticado')
     email: str = Field(..., description='Email do usuario autenticado')
+    is_admin: bool = Field(False, description='Indica se o usuario e administrador')
+    tem_foto: bool = Field(False, description='Indica se o usuario possui foto de perfil')
+    cargo: str | None = Field(None, description='Nome do cargo do usuario, se houver')
 
     model_config = ConfigDict(from_attributes=True)

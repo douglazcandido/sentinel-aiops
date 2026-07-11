@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.logger import setup_logger
 from app.core.security import criar_access_token, verificar_senha
-from app.models.usuario_model import Usuario
+from app.models.usuario_model import Cargo, Usuario
 from app.schemas.auth import LoginRequest, LoginResponseData
 from app.schemas.base import SentinelResponse
 
@@ -37,10 +37,15 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     token = criar_access_token(usuario.email)
     logger.info('login bem-sucedido: %s', payload.email)
 
+    cargo = db.get(Cargo, usuario.cargo_id) if usuario.cargo_id else None
+
     data = LoginResponseData(
         access_token=token,
         nome=usuario.nome,
         email=usuario.email,
+        is_admin=usuario.is_admin,
+        tem_foto=usuario.foto_perfil is not None,
+        cargo=cargo.nome if cargo else None,
     )
 
     return SentinelResponse(

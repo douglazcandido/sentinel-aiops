@@ -7,6 +7,7 @@ import {
   Network,
   Lightbulb,
   Download,
+  Settings2,
   LogOut,
   Pin,
   PinOff,
@@ -27,6 +28,8 @@ export const NAV_ITEMS = [
   { to: '/exportacao', label: 'Exportação', icon: Download },
 ]
 
+const GESTAO_ITEM = { to: '/gestao', label: 'Gestão', icon: Settings2, end: false }
+
 interface SidebarProps {
   expanded: boolean
   pinned: boolean
@@ -35,8 +38,10 @@ interface SidebarProps {
 }
 
 export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: SidebarProps) {
-  const { user, logout } = useAuth()
+  const { logout, isAdmin } = useAuth()
   useLocation()
+
+  const navItems = isAdmin ? [...NAV_ITEMS, GESTAO_ITEM] : NAV_ITEMS
 
   return (
     <aside
@@ -50,7 +55,7 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
     >
       {/* Nav */}
       <nav className="mt-8 flex flex-1 flex-col gap-1 px-3">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+        {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -110,41 +115,22 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
           </span>
         </div>
 
-        {/* User */}
-        <div className="mt-1 flex items-center gap-3 overflow-hidden rounded-lg px-1 py-1.5">
-          <div className="relative h-8 w-8 shrink-0">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-px -z-10 rounded-full bg-[var(--color-glow-blue)] opacity-[0.22] blur-sm"
-            />
-            <img
-              src="/usuario-generico.svg"
-              alt="Usuário"
-              className="h-8 w-8 rounded-full border border-[var(--color-glow-blue)]/22 bg-[var(--color-surface-3)] object-cover"
-            />
-          </div>
-          <div
+        {/* Logout */}
+        <button
+          onClick={logout}
+          title="Sair"
+          className="mt-1 flex h-10 w-full items-center gap-3 overflow-hidden rounded-lg px-[10px] text-sm text-[var(--color-muted)] transition-colors hover:bg-[var(--color-risk-high-soft)] hover:text-[var(--color-risk-high)]"
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          <span
             className={cn(
-              'min-w-0 flex-1 transition-opacity duration-200',
+              'whitespace-nowrap transition-opacity duration-200',
               expanded ? 'opacity-100' : 'opacity-0',
             )}
           >
-            <p className="truncate text-xs font-medium text-[var(--color-foreground)]">
-              {user?.nome || 'Usuário'}
-            </p>
-            <p className="truncate text-[11px] text-[var(--color-muted-2)]">{user?.email}</p>
-          </div>
-          <button
-            onClick={logout}
-            title="Sair"
-            className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--color-muted)] transition-all duration-200 hover:bg-[var(--color-risk-high-soft)] hover:text-[var(--color-risk-high)]',
-              expanded ? 'opacity-100' : 'opacity-0',
-            )}
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
+            Logout
+          </span>
+        </button>
       </div>
     </aside>
   )

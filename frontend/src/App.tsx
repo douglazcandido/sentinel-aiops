@@ -10,6 +10,7 @@ import RiscoPage from '@/pages/risco'
 import PadroesPage from '@/pages/padroes'
 import RecomendacoesPage from '@/pages/recomendacoes'
 import ExportacaoPage from '@/pages/exportacao'
+import GestaoPage from '@/pages/gestao'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/padroes" element={<PadroesPage />} />
         <Route path="/recomendacoes" element={<RecomendacoesPage />} />
         <Route path="/exportacao" element={<ExportacaoPage />} />
+        <Route path="/gestao" element={<GestaoPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

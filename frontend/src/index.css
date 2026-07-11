@@ -34,6 +34,7 @@
   html {
     background-color: var(--color-background);
     color-scheme: dark;
+    scrollbar-gutter: stable;
   }
   body {
     margin: 0;

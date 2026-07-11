@@ -1,11 +1,14 @@
 import { useState } from "react"
 import { Outlet } from "react-router-dom"
+import { UserRound } from "lucide-react"
 import { Sidebar, SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "./sidebar"
 import { NotificationCenter } from "./notification-bell"
+import { PerfilPanel } from "./perfil-panel"
 
 export function AppLayout() {
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(true)
+  const [perfilOpen, setPerfilOpen] = useState(false)
   const expanded = pinned || hovered
   const marginLeft = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W
 
@@ -20,7 +23,17 @@ export function AppLayout() {
             className="h-10 w-auto"
           />
         </div>
-        <NotificationCenter />
+        <div className="flex items-center gap-1">
+          <NotificationCenter />
+          <button
+            type="button"
+            onClick={() => setPerfilOpen(true)}
+            title="Perfil"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-foreground)]"
+          >
+            <UserRound className="h-[18px] w-[18px]" />
+          </button>
+        </div>
       </header>
 
       {/* Sidebar */}
@@ -30,6 +43,8 @@ export function AppLayout() {
         onHoverChange={setHovered}
         onPinnedChange={setPinned}
       />
+
+      <PerfilPanel open={perfilOpen} onClose={() => setPerfilOpen(false)} />
 
       {/* Main content */}
       <div

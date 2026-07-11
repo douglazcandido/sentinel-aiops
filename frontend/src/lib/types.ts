@@ -4,11 +4,36 @@ export interface LoginResponse {
   token_type: string
   nome: string
   email: string
+  is_admin: boolean
+  tem_foto: boolean
+  cargo: string | null
 }
 
 export interface Usuario {
   nome: string
   email: string
+  is_admin: boolean
+  tem_foto: boolean
+  cargo: string | null
+}
+
+// ===== Perfil =====
+export interface Cargo {
+  id: number
+  nome: string
+  ativo: boolean
+}
+
+// ===== Gestão =====
+export interface UsuarioAdmin {
+  id: number
+  nome: string
+  email: string
+  cargo: string | null
+  is_admin: boolean
+  ativo: boolean
+  tem_foto: boolean
+  criado_em: string
 }
 
 // ===== Histórico =====

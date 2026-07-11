@@ -33,3 +33,10 @@ def get_current_user(
         raise credenciais_invalidas
 
     return usuario
+
+
+def get_admin_user(usuario: Usuario = Depends(get_current_user)) -> Usuario:
+    if not usuario.is_admin:
+        logger.warning('acesso negado, usuario nao e admin: %s', usuario.email)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Acesso restrito a administradores')
+    return usuario

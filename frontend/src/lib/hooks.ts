@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import { fetchData, getErrorMessage } from "./api"
+import { api, fetchData, getErrorMessage } from "./api"
 import type {
   HistoricoData,
   PrevisaoData,
@@ -7,6 +7,8 @@ import type {
   ClustersData,
   RecomendacoesData,
   TipoRecomendacao,
+  UsuarioAdmin,
+  Cargo,
 } from "./types"
 
 interface AsyncState<T> {
@@ -79,6 +81,64 @@ export function useClusters() {
 export function useRecomendacoes(tipo?: TipoRecomendacao | "todas") {
   const params = tipo && tipo !== "todas" ? { tipo } : undefined
   return useApiData<RecomendacoesData>("/api/v1/recomendacoes", params)
+}
+
+/**
+ * Busca uma foto de perfil via o client axios autenticado (o backend exige Bearer
+ * token, que uma tag <img> comum não consegue enviar) e expõe um object URL.
+ * `path` nulo desativa a busca (ex.: usuário sem foto). Incremente `versao` após
+ * um upload para forçar o recarregamento.
+ */
+function useAvatarUrlFromPath(path: string | null, versao = 0): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!path) {
+      setUrl(null)
+      return
+    }
+
+    let active = true
+    let objectUrl: string | null = null
+
+    api
+      .get(path, { responseType: "blob" })
+      .then((res) => {
+        if (!active) return
+        objectUrl = URL.createObjectURL(res.data as Blob)
+        setUrl(objectUrl)
+      })
+      .catch(() => {
+        if (active) setUrl(null)
+      })
+
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [path, versao])
+
+  return url
+}
+
+/** Foto de perfil do usuário logado. */
+export function useAvatarUrl(temFoto: boolean, versao = 0): string | null {
+  return useAvatarUrlFromPath(temFoto ? "/api/v1/perfil/foto" : null, versao)
+}
+
+/** Foto de perfil de um usuário arbitrário, para a área de Gestão (somente admin). */
+export function useAvatarUrlAdmin(usuarioId: number | null, temFoto: boolean, versao = 0): string | null {
+  return useAvatarUrlFromPath(usuarioId != null && temFoto ? `/api/v1/gestao/usuarios/${usuarioId}/foto` : null, versao)
+}
+
+/** Lista de usuários para a área de Gestão (somente admin). */
+export function useUsuariosAdmin() {
+  return useApiData<UsuarioAdmin[]>("/api/v1/gestao/usuarios")
+}
+
+/** Todos os cargos (ativos e inativos) para a área de Gestão (somente admin). */
+export function useCargosGestao() {
+  return useApiData<Cargo[]>("/api/v1/gestao/cargos")
 }
 
 /** Polls the recomendações endpoint in the background to feed the notification bell. */

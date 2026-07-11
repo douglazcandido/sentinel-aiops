@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import auth, clusters, historico, previsao, recomendacoes, risco
+from app.api.v1 import auth, clusters, gestao, historico, perfil, previsao, recomendacoes, risco
 from app.core.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -26,6 +26,9 @@ app.include_router(previsao.router, prefix='/api/v1')
 app.include_router(risco.router, prefix='/api/v1')
 app.include_router(clusters.router, prefix='/api/v1')
 app.include_router(recomendacoes.router, prefix='/api/v1')
+app.include_router(perfil.router, prefix='/api/v1')
+app.include_router(gestao.router, prefix='/api/v1')
+app.include_router(gestao.cargos_router, prefix='/api/v1')
 
 @app.get('/')
 def root():

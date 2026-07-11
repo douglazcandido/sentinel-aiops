@@ -18,7 +18,7 @@ import { Card, CardHeader } from "@/components/card"
 import { KpiSkeleton, Skeleton } from "@/components/skeleton"
 import { Badge, prioridadeTone, ProgressBar } from "@/components/badge"
 import { AnimatedNumber } from "@/components/animated-number"
-import { useHistorico, usePrevisao, useClusters, useRisco, useRecomendacoes } from "@/lib/hooks"
+import { useHistorico, usePrevisao, useClusters, useRisco, useRecomendacoes, useAvatarUrl } from "@/lib/hooks"
 import {
   formatInt,
   formatPct,
@@ -43,7 +43,8 @@ function getCurrentDateFormatted(): string {
 }
 
 export default function DashboardPage() {
-  const { user } = useUser()
+  const { user, temFoto, avatarVersion } = useUser()
+  const avatarUrl = useAvatarUrl(temFoto, avatarVersion)
   const hist = useHistorico()
   const prev = usePrevisao()
   const clusters = useClusters()
@@ -91,11 +92,17 @@ export default function DashboardPage() {
                 aria-hidden
                 className="pointer-events-none absolute -inset-px -z-10 rounded-full bg-[var(--color-glow-blue)] opacity-[0.35] blur-sm"
               />
-              <img
-                src="/usuario-generico.svg"
-                alt="Usuário"
-                className="h-10 w-10 rounded-full border border-[var(--color-glow-blue)]/45 bg-[var(--color-surface-3)] object-cover"
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={user?.nome ?? "Usuário"}
+                  className="h-10 w-10 rounded-full border border-[var(--color-glow-blue)]/45 bg-[var(--color-surface-3)] object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-glow-blue)]/45 bg-[var(--color-surface-3)] text-sm font-semibold text-[var(--color-accent)]">
+                  {user?.nome?.charAt(0).toUpperCase() ?? "U"}
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm font-semibold text-[var(--color-foreground)]">
