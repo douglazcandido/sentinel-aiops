@@ -58,21 +58,20 @@ export interface VolumePorDiaSemana {
   total_incidentes: number
 }
 
-export interface VolumeMensal {
-  ano: number
-  mes: number
+export interface VolumeDiario {
+  data: string
   prioridade_codigo: number
   prioridade_label: string
   total_incidentes: number
   total_no_kpi: number
 }
 
-export interface ViolacaoMensal {
-  ano: number
-  mes: number
+export interface ViolacaoDiario {
+  data: string
   prioridade_codigo: number
   prioridade_label: string
   total_violacoes: number
+  total_no_kpi: number
 }
 
 export interface VolumePorGrupo {
@@ -87,8 +86,8 @@ export interface HistoricoData {
   kpis_gerais: KpisGerais
   volume_por_hora: VolumePorHora[]
   volume_por_dia_semana: VolumePorDiaSemana[]
-  volume_mensal: VolumeMensal[]
-  violacoes_mensal: ViolacaoMensal[]
+  volume_diario: VolumeDiario[]
+  violacoes_diario: ViolacaoDiario[]
   volume_por_grupo: VolumePorGrupo[]
 }
 
@@ -136,6 +135,22 @@ export interface RiscoData {
   distribuicao_risco: DistribuicaoRisco[]
   kpis_ola: KpiOla[]
   feature_importance: FeatureImportance[]
+}
+
+export interface EvolucaoMensal {
+  ano: number
+  mes: number
+  mes_label: string
+  prioridade_codigo: number
+  prioridade_label: string
+  violacoes_mes: number
+  violacoes_acumuladas: number
+  limite_melhor_faixa: number
+}
+
+export interface EvolucaoViolacoes {
+  evolucao: EvolucaoMensal[]
+  anos_disponiveis: number[]
 }
 
 export interface Cluster {

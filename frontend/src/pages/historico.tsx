@@ -29,7 +29,7 @@ import { ErrorState, EmptyState } from "@/components/states"
 import { ProgressBar } from "@/components/badge"
 import { CHART_COLORS, CHART_ANIMATION, chartStagger, axisProps, ChartTooltip } from "@/components/chart-theme"
 import { AnimatedNumber } from "@/components/animated-number"
-import { MonthPicker, type PeriodoFiltro } from "@/components/month-picker"
+import { DateRangePicker, type DateRange } from "@/components/date-range-picker"
 import { useHistorico } from "@/lib/hooks"
 import {
   abbreviateNumber,
@@ -40,12 +40,14 @@ import {
   diaSemanaCurto,
   mesLabel,
 } from "@/lib/utils"
-import type { VolumeMensal, ViolacaoMensal, VolumePorGrupo } from "@/lib/types"
+import type { VolumeDiario, ViolacaoDiario, VolumePorGrupo } from "@/lib/types"
 
 const PRIORIDADE_CORES = [CHART_COLORS.high, CHART_COLORS.med, CHART_COLORS.accent, CHART_COLORS.low]
+const FILTRO_VAZIO: DateRange = { inicio: null, fim: null }
 
 type GrupoCol = keyof VolumePorGrupo
 type SortDir = "asc" | "desc"
+type Granularidade = "dia" | "semana" | "mes"
 
 const GRUPO_COLUNAS: { key: GrupoCol; label: string; alignRight: boolean }[] = [
   { key: "grupo_nome", label: "Grupo", alignRight: false },
@@ -55,19 +57,65 @@ const GRUPO_COLUNAS: { key: GrupoCol; label: string; alignRight: boolean }[] = [
   { key: "pct_sem_intervencao", label: "Sem intervenção", alignRight: false },
 ]
 
-/** Pivot monthly rows (split by priority) into chart points keyed by "Mês/AA". */
-function pivotMensal<T extends { ano: number; mes: number; prioridade_label: string }>(
+function pad2(n: number): string {
+  return String(n).padStart(2, "0")
+}
+
+function parseISODate(iso: string): { y: number; m: number; d: number } {
+  const [y, m, d] = iso.split("-").map(Number)
+  return { y, m, d }
+}
+
+/** Segunda-feira (UTC) da semana que contém a data informada. */
+function segundaDaSemanaUTC(y: number, m: number, d: number): { y: number; m: number; d: number } {
+  const date = new Date(Date.UTC(y, m - 1, d))
+  const dow = (date.getUTCDay() + 6) % 7
+  date.setUTCDate(date.getUTCDate() - dow)
+  return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() }
+}
+
+/** Decide a granularidade do eixo temporal a partir do intervalo de dias filtrado. */
+function granularidadeParaFiltro(filtro: DateRange): Granularidade {
+  if (!filtro.inicio || !filtro.fim) return "mes"
+  const a = parseISODate(filtro.inicio)
+  const b = parseISODate(filtro.fim)
+  const dias =
+    Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86_400_000) + 1
+  if (dias <= 30) return "dia"
+  if (dias <= 90) return "semana"
+  return "mes"
+}
+
+/** Agrupa linhas diárias (por prioridade) em pontos de gráfico na granularidade informada. */
+function agruparDiario<T extends { data: string; prioridade_label: string }>(
   rows: T[],
   valueKey: keyof T,
   selected: Set<string>,
+  granularidade: Granularidade,
 ): { points: Record<string, number | string>[]; prioridades: string[] } {
   const prioridades = Array.from(new Set(rows.map((r) => r.prioridade_label)))
   const map = new Map<string, Record<string, number | string>>()
   for (const r of rows) {
     if (selected.size && !selected.has(r.prioridade_label)) continue
-    const key = `${mesLabel(r.mes)}/${String(r.ano).slice(2)}`
-    const sortKey = r.ano * 100 + r.mes
-    if (!map.has(key)) map.set(key, { label: key, _sort: sortKey })
+    const { y, m, d } = parseISODate(r.data)
+    let key: string
+    let label: string
+    let sortKey: number
+    if (granularidade === "dia") {
+      key = r.data
+      label = `${pad2(d)}/${pad2(m)}`
+      sortKey = y * 10000 + m * 100 + d
+    } else if (granularidade === "semana") {
+      const seg = segundaDaSemanaUTC(y, m, d)
+      key = `${seg.y}-${pad2(seg.m)}-${pad2(seg.d)}`
+      label = `${pad2(seg.d)}/${pad2(seg.m)}`
+      sortKey = seg.y * 10000 + seg.m * 100 + seg.d
+    } else {
+      key = `${y}-${pad2(m)}`
+      label = `${mesLabel(m)}/${String(y).slice(2)}`
+      sortKey = y * 100 + m
+    }
+    if (!map.has(key)) map.set(key, { label, _sort: sortKey })
     const obj = map.get(key)!
     obj[r.prioridade_label] = ((obj[r.prioridade_label] as number) || 0) + (r[valueKey] as number)
   }
@@ -76,22 +124,20 @@ function pivotMensal<T extends { ano: number; mes: number; prioridade_label: str
 }
 
 export default function HistoricoPage() {
-  const { data, loading, error, reload, version } = useHistorico()
-  const [prioMensal, setPrioMensal] = useState<Set<string>>(new Set())
-  const [periodo, setPeriodo] = useState<PeriodoFiltro | null>(null)
+  const [filtro, setFiltro] = useState<DateRange>(FILTRO_VAZIO)
+  const { data, loading, error, reload, version } = useHistorico(
+    filtro.inicio || filtro.fim
+      ? { dataInicio: filtro.inicio ?? undefined, dataFim: filtro.fim ?? undefined }
+      : undefined,
+  )
+  const [prioSelecionada, setPrioSelecionada] = useState<Set<string>>(new Set())
   const [grupoSort, setGrupoSort] = useState<{ col: GrupoCol; dir: SortDir }>({
     col: "total_incidentes",
     dir: "desc",
   })
 
-  const mesesPorAno = useMemo(() => {
-    const map = new Map<number, Set<number>>()
-    data?.volume_mensal.forEach((r) => {
-      if (!map.has(r.ano)) map.set(r.ano, new Set())
-      map.get(r.ano)!.add(r.mes)
-    })
-    return map
-  }, [data])
+  const filtroAtivo = !!(filtro.inicio || filtro.fim)
+  const granularidade = useMemo(() => granularidadeParaFiltro(filtro), [filtro])
 
   function toggleGrupoSort(col: GrupoCol) {
     setGrupoSort((prev) =>
@@ -114,12 +160,12 @@ export default function HistoricoPage() {
   }, [data, grupoSort])
 
   const prioridades = useMemo(
-    () => (data ? Array.from(new Set(data.volume_mensal.map((r) => r.prioridade_label))) : []),
+    () => (data ? Array.from(new Set(data.volume_diario.map((r) => r.prioridade_label))) : []),
     [data],
   )
 
   function togglePrio(p: string) {
-    setPrioMensal((prev) => {
+    setPrioSelecionada((prev) => {
       const next = new Set(prev)
       if (next.has(p)) next.delete(p)
       else next.add(p)
@@ -127,40 +173,19 @@ export default function HistoricoPage() {
     })
   }
 
-  const volumeMensalFiltrado = useMemo(() => {
-    if (!data) return []
-    if (!periodo) return data.volume_mensal
-    return data.volume_mensal.filter(
-      (r) => r.ano === periodo.ano && (periodo.mes === null || r.mes === periodo.mes),
-    )
-  }, [data, periodo])
-
-  const violacoesMensalFiltrado = useMemo(() => {
-    if (!data) return []
-    if (!periodo) return data.violacoes_mensal
-    return data.violacoes_mensal.filter(
-      (r) => r.ano === periodo.ano && (periodo.mes === null || r.mes === periodo.mes),
-    )
-  }, [data, periodo])
-
-  const volumeMensal = useMemo(
-    () => (data ? pivotMensal<VolumeMensal>(volumeMensalFiltrado, "total_incidentes", prioMensal) : null),
-    [data, volumeMensalFiltrado, prioMensal],
-  )
-  const violacoesMensal = useMemo(
+  const volumeDiario = useMemo(
     () =>
       data
-        ? pivotMensal<ViolacaoMensal>(violacoesMensalFiltrado, "total_violacoes", prioMensal)
+        ? agruparDiario<VolumeDiario>(data.volume_diario, "total_incidentes", prioSelecionada, granularidade)
         : null,
-    [data, violacoesMensalFiltrado, prioMensal],
+    [data, prioSelecionada, granularidade],
   )
-
-  const totalIncidentesPeriodo = useMemo(
+  const violacoesDiario = useMemo(
     () =>
-      periodo
-        ? volumeMensalFiltrado.reduce((s, r) => s + r.total_incidentes, 0)
-        : (data?.kpis_gerais.total_incidentes ?? 0),
-    [periodo, volumeMensalFiltrado, data],
+      data
+        ? agruparDiario<ViolacaoDiario>(data.violacoes_diario, "total_violacoes", prioSelecionada, granularidade)
+        : null,
+    [data, prioSelecionada, granularidade],
   )
 
   const maxHora = useMemo(
@@ -183,22 +208,29 @@ export default function HistoricoPage() {
         value={k ? formatDate(k.periodo_fim) : undefined}
         onRefresh={reload}
         refreshing={loading}
-        actions={
-          <MonthPicker
-            value={periodo}
-            onChange={setPeriodo}
-            mesesDisponiveis={(ano) => mesesPorAno.get(ano) ?? new Set()}
-          />
-        }
+        actions={<DateRangePicker value={filtro} onChange={setFiltro} />}
       />
       <div className="flex-1 space-y-5 p-6">
         {error ? (
-          <ErrorState message={error} onRetry={reload} />
+          filtroAtivo ? (
+            <div className="flex flex-col items-center gap-3">
+              <EmptyState message="Nenhum incidente encontrado para o período selecionado." />
+              <button
+                type="button"
+                onClick={() => setFiltro(FILTRO_VAZIO)}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              >
+                Voltar para todo o período
+              </button>
+            </div>
+          ) : (
+            <ErrorState message={error} onRetry={reload} />
+          )
         ) : (
           <>
             {/* KPIs */}
             <div key={`kpis-${version}`} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {!k ? (
+              {loading || !k ? (
                 Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
               ) : (
                 <>
@@ -206,14 +238,8 @@ export default function HistoricoPage() {
                     index={0}
                     label="Total de Incidentes"
                     icon={<Database className="h-4 w-4" />}
-                    value={<AnimatedNumber value={totalIncidentesPeriodo} format={formatInt} />}
-                    hint={
-                      periodo
-                        ? periodo.mes
-                          ? `${mesLabel(periodo.mes)}/${periodo.ano}`
-                          : `Ano de ${periodo.ano}`
-                        : `${formatDate(k.periodo_inicio)} — ${formatDate(k.periodo_fim)}`
-                    }
+                    value={<AnimatedNumber value={k.total_incidentes} format={formatInt} />}
+                    hint={`${formatDate(k.periodo_inicio)} — ${formatDate(k.periodo_fim)}`}
                   />
                   <KpiCard
                     index={1}
@@ -245,7 +271,7 @@ export default function HistoricoPage() {
 
             {/* Hora + Dia */}
             <div key={`hora-dia-${version}`} className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {!data ? (
+              {loading || !data ? (
                 <>
                   <ChartSkeleton />
                   <ChartSkeleton />
@@ -257,11 +283,6 @@ export default function HistoricoPage() {
                       title="Volume por hora do dia"
                       subtitle="Distribuição de incidentes em 24h"
                     />
-                    {periodo && (
-                      <p className="-mt-3 mb-3 text-[11px] text-[var(--color-muted-2)]">
-                        Exibindo período completo — dados por hora e dia não são segmentados por mês
-                      </p>
-                    )}
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={data.volume_por_hora} margin={{ top: 8, right: 8 }}>
                         <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
@@ -316,11 +337,6 @@ export default function HistoricoPage() {
                       title="Volume por dia da semana"
                       subtitle="Segunda a Domingo"
                     />
-                    {periodo && (
-                      <p className="-mt-3 mb-3 text-[11px] text-[var(--color-muted-2)]">
-                        Exibindo período completo — dados por hora e dia não são segmentados por mês
-                      </p>
-                    )}
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={data.volume_por_dia_semana} margin={{ top: 8, right: 8 }}>
                         <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
@@ -372,19 +388,19 @@ export default function HistoricoPage() {
               )}
             </div>
 
-            {/* Mensal: volume + violações com filtro de prioridade */}
-            {!data ? (
+            {/* Série temporal: volume + violações com filtro de prioridade */}
+            {loading || !data ? (
               <ChartSkeleton height={300} />
             ) : (
-              <div key={`mensal-${version}`} className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <div key={`serie-${version}`} className="grid grid-cols-1 gap-5 xl:grid-cols-2">
                 <Card index={0}>
                   <CardHeader
-                    title="Volume mensal por prioridade"
+                    title="Volume por prioridade"
                     subtitle="Evolução temporal"
                     action={
                       <div className="flex flex-wrap gap-1.5">
                         {prioridades.map((p, i) => {
-                          const active = prioMensal.size === 0 || prioMensal.has(p)
+                          const active = prioSelecionada.size === 0 || prioSelecionada.has(p)
                           return (
                             <button
                               key={p}
@@ -410,7 +426,7 @@ export default function HistoricoPage() {
                     }
                   />
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={volumeMensal!.points} margin={{ top: 8, right: 8 }}>
+                    <LineChart data={volumeDiario!.points} margin={{ top: 8, right: 8 }}>
                       <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
                       <XAxis dataKey="label" {...axisProps} />
                       <YAxis {...axisProps} tickFormatter={(v) => abbreviateNumber(v)} width={42} />
@@ -428,8 +444,8 @@ export default function HistoricoPage() {
                           ) : null
                         }
                       />
-                      {volumeMensal!.prioridades.map((p, i) =>
-                        prioMensal.size === 0 || prioMensal.has(p) ? (
+                      {volumeDiario!.prioridades.map((p, i) =>
+                        prioSelecionada.size === 0 || prioSelecionada.has(p) ? (
                           <Line
                             key={p}
                             type="monotone"
@@ -450,11 +466,11 @@ export default function HistoricoPage() {
 
                 <Card index={1}>
                   <CardHeader
-                    title="Violações OLA mensais"
+                    title="Violações OLA"
                     subtitle="Por prioridade ao longo do tempo"
                   />
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={violacoesMensal!.points} margin={{ top: 8, right: 8 }}>
+                    <LineChart data={violacoesDiario!.points} margin={{ top: 8, right: 8 }}>
                       <CartesianGrid stroke={CHART_COLORS.grid} vertical={false} />
                       <XAxis dataKey="label" {...axisProps} />
                       <YAxis {...axisProps} tickFormatter={(v) => abbreviateNumber(v)} width={42} />
@@ -476,8 +492,8 @@ export default function HistoricoPage() {
                         wrapperStyle={{ fontSize: 11, color: CHART_COLORS.muted }}
                         iconType="plainline"
                       />
-                      {violacoesMensal!.prioridades.map((p, i) =>
-                        prioMensal.size === 0 || prioMensal.has(p) ? (
+                      {violacoesDiario!.prioridades.map((p, i) =>
+                        prioSelecionada.size === 0 || prioSelecionada.has(p) ? (
                           <Line
                             key={p}
                             type="monotone"
@@ -499,7 +515,7 @@ export default function HistoricoPage() {
             )}
 
             {/* Volume por grupo */}
-            {!data ? (
+            {loading || !data ? (
               <ChartSkeleton height={300} />
             ) : (
               <Card key={`grupo-${version}`} index={0}>

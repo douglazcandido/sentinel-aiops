@@ -2,17 +2,24 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.gold_models import (
+    DimData,
     DimPrioridade,
+    HistoricoViolacoesDiario,
     ModeloFeatureImportance,
     RiscoOlaIncidente,
     RiscoOlaKpi,
 )
 from app.schemas.risco import (
     DistribuicaoRiscoSchema,
+    EvolucaoMensalSchema,
+    EvolucaoViolacoesSchema,
     FeatureImportanceSchema,
     KpiOlaSchema,
     RiscoCompletoSchema,
 )
+
+# Limite da melhor faixa de meta (violacoes abaixo disso = melhor faixa), por codigo de prioridade.
+LIMITE_MELHOR_FAIXA = {2: 30, 3: 200}
 
 
 def get_risco_completo(db: Session, ano: int | None = None) -> RiscoCompletoSchema:
@@ -68,6 +75,54 @@ def _get_kpis_ola(db: Session, ano: int | None) -> list[KpiOlaSchema]:
         )
         for r in rows
     ]
+
+
+def get_evolucao_violacoes(db: Session, ano: int | None = None) -> EvolucaoViolacoesSchema:
+    query = (
+        db.query(
+            DimData.ano,
+            DimData.mes,
+            DimData.mes_label,
+            DimPrioridade.codigo.label('prioridade_codigo'),
+            DimPrioridade.label.label('prioridade_label'),
+            func.sum(HistoricoViolacoesDiario.total_violacoes).label('violacoes_mes'),
+        )
+        .join(DimData, HistoricoViolacoesDiario.data == DimData.data)
+        .join(DimPrioridade, HistoricoViolacoesDiario.prioridade_id == DimPrioridade.id)
+        .filter(DimPrioridade.codigo.in_([2, 3]))
+    )
+
+    if ano:
+        query = query.filter(DimData.ano == ano)
+
+    rows = (
+        query.group_by(DimData.ano, DimData.mes, DimData.mes_label, DimPrioridade.codigo, DimPrioridade.label)
+        .order_by(DimData.ano, DimPrioridade.codigo, DimData.mes)
+        .all()
+    )
+
+    evolucao: list[EvolucaoMensalSchema] = []
+    acumulado_por_grupo: dict[tuple[int, int], int] = {}
+
+    for r in rows:
+        chave = (r.ano, r.prioridade_codigo)
+        acumulado_por_grupo[chave] = acumulado_por_grupo.get(chave, 0) + r.violacoes_mes
+        evolucao.append(
+            EvolucaoMensalSchema(
+                ano=r.ano,
+                mes=r.mes,
+                mes_label=r.mes_label,
+                prioridade_codigo=r.prioridade_codigo,
+                prioridade_label=r.prioridade_label,
+                violacoes_mes=r.violacoes_mes,
+                violacoes_acumuladas=acumulado_por_grupo[chave],
+                limite_melhor_faixa=LIMITE_MELHOR_FAIXA[r.prioridade_codigo],
+            )
+        )
+
+    anos_disponiveis = sorted({r.ano for r in rows}, reverse=True)
+
+    return EvolucaoViolacoesSchema(evolucao=evolucao, anos_disponiveis=anos_disponiveis)
 
 
 def _get_feature_importance(db: Session) -> list[FeatureImportanceSchema]:

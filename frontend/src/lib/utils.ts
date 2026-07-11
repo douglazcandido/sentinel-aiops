@@ -42,6 +42,13 @@ export function formatPct(value: number | null | undefined, digits = 1): string 
 
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—"
+  // Extrai o prefixo YYYY-MM-DD diretamente: `new Date("YYYY-MM-DD")` interpreta a
+  // string como UTC, o que desloca a data em -1 dia em fusos horários negativos.
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (match) {
+    const [, y, m, d] = match
+    return `${d}/${m}/${y}`
+  }
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })

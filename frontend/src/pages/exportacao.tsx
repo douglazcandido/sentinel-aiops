@@ -38,8 +38,8 @@ const DATASETS: DatasetConfig[] = [
   { key: 'kpis_gerais', label: 'KPIs Gerais', descricao: 'Totais e percentuais do período completo', frente: 'Histórico' },
   { key: 'volume_hora', label: 'Volume por Hora', descricao: 'Distribuição de incidentes por hora do dia (0-23)', frente: 'Histórico' },
   { key: 'volume_dia', label: 'Volume por Dia da Semana', descricao: 'Distribuição de incidentes por dia da semana', frente: 'Histórico' },
-  { key: 'volume_mensal', label: 'Volume Mensal por Prioridade', descricao: 'Série histórica mensal segmentada por prioridade', frente: 'Histórico' },
-  { key: 'violacoes_mensal', label: 'Violações OLA Mensais', descricao: 'Violações de OLA por mês e prioridade', frente: 'Histórico' },
+  { key: 'volume_mensal', label: 'Volume Diário por Prioridade', descricao: 'Série histórica diária segmentada por prioridade', frente: 'Histórico' },
+  { key: 'violacoes_mensal', label: 'Violações OLA Diárias', descricao: 'Violações de OLA por dia e prioridade', frente: 'Histórico' },
   { key: 'volume_grupo', label: 'Volume por Equipe', descricao: 'Totais, KPIs e violações por grupo/equipe', frente: 'Histórico' },
   { key: 'previsao', label: 'Previsão de Volume', descricao: 'Previsões D+1 e D+7 geradas pelo NeuralProphet', frente: 'Previsão' },
   { key: 'risco_distribuicao', label: 'Distribuição de Risco', descricao: 'Contagem de incidentes por classe de risco (Baixo/Médio/Alto)', frente: 'Risco OLA' },
@@ -135,9 +135,9 @@ export default function ExportacaoPage() {
       case 'volume_dia':
         return historico?.volume_por_dia_semana ?? []
       case 'volume_mensal':
-        return historico?.volume_mensal ?? []
+        return historico?.volume_diario ?? []
       case 'violacoes_mensal':
-        return historico?.violacoes_mensal ?? []
+        return historico?.violacoes_diario ?? []
       case 'volume_grupo':
         return historico?.volume_por_grupo ?? []
       case 'previsao':

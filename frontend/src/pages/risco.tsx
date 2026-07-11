@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { ShieldAlert, Target, TrendingUp, TrendingDown, Brain } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -8,39 +8,108 @@ import {
   Tooltip,
   BarChart,
   Bar,
+  LineChart,
+  Line,
+  ReferenceLine,
+  Legend,
   XAxis,
   YAxis,
   CartesianGrid,
 } from 'recharts'
 import { Topbar } from '@/components/topbar'
 import { Card, CardHeader } from '@/components/card'
-import { Skeleton } from '@/components/skeleton'
+import { Skeleton, ChartSkeleton } from '@/components/skeleton'
 import { ErrorState, EmptyState } from '@/components/states'
 import { Badge, prioridadeTone, ProgressBar } from '@/components/badge'
-import { RISK_COLORS, ChartTooltip } from '@/components/chart-theme'
-import { useRisco } from '@/lib/hooks'
+import { RISK_COLORS, ChartTooltip, CHART_COLORS } from '@/components/chart-theme'
+import { useRisco, useEvolucaoViolacoes } from '@/lib/hooks'
 import { formatInt, formatPct } from '@/lib/utils'
 
 const RISK_LABEL: Record<string, string> = { Baixo: 'Baixo', Medio: 'Médio', Alto: 'Alto' }
 
+const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+const EVOLUCAO_COR: Record<number, string> = {
+  2: CHART_COLORS.med,
+  3: CHART_COLORS.high,
+}
+
 export default function RiscoPage() {
-  const [ano, setAno] = useState<number | 'todos'>('todos')
+  const [ano, setAno] = useState<number | 'todos'>(2025)
   const { data, loading, error, reload } = useRisco(ano)
+  const {
+    data: evolucaoData,
+    loading: evolucaoLoading,
+    error: evolucaoError,
+    reload: reloadEvolucao,
+  } = useEvolucaoViolacoes()
 
   const totalRisco = useMemo(
     () => data?.distribuicao_risco.reduce((s, d) => s + d.quantidade, 0) ?? 0,
     [data],
   )
 
-  const anosRef = useRef<number[]>([])
-  useMemo(() => {
-    if (ano !== 'todos') return
-    const anos = new Set<number>()
-    data?.kpis_ola.forEach((k) => anos.add(k.ano))
-    const lista = Array.from(anos).sort((a, b) => b - a)
-    if (lista.length > 0) anosRef.current = lista
-  }, [data, ano])
-  const anosDisponiveis = anosRef.current
+  const anosDisponiveis = useMemo(
+    () => evolucaoData?.anos_disponiveis ?? [],
+    [evolucaoData],
+  )
+
+  // ano efetivamente usado pelo gráfico de evolução: cai no mais recente disponível
+  // quando o filtro do card de KPIs está em "Todos os anos" (a evolução exige um ano).
+  const anoEvolucao = ano === 'todos' ? anosDisponiveis[0] : ano
+
+  const prioridadesEvolucao = useMemo(() => {
+    const mapa = new Map<number, string>()
+    evolucaoData?.evolucao.forEach((e) => mapa.set(e.prioridade_codigo, e.prioridade_label))
+    return Array.from(mapa.entries())
+      .map(([codigo, label]) => ({ codigo, label }))
+      .sort((a, b) => a.codigo - b.codigo)
+  }, [evolucaoData])
+
+  const limitesEvolucao = useMemo(() => {
+    const mapa = new Map<number, number>()
+    evolucaoData?.evolucao.forEach((e) => mapa.set(e.prioridade_codigo, e.limite_melhor_faixa))
+    return mapa
+  }, [evolucaoData])
+
+  const evolucaoChartData = useMemo(() => {
+    if (!evolucaoData || anoEvolucao == null) return []
+    const porPrioridadeMes = new Map<number, Map<number, number>>()
+    evolucaoData.evolucao
+      .filter((e) => e.ano === anoEvolucao)
+      .forEach((e) => {
+        if (!porPrioridadeMes.has(e.prioridade_codigo)) porPrioridadeMes.set(e.prioridade_codigo, new Map())
+        porPrioridadeMes.get(e.prioridade_codigo)!.set(e.mes, e.violacoes_acumuladas)
+      })
+
+    return MESES.map((mesLabel, idx) => {
+      const mes = idx + 1
+      const row: Record<string, number | string> = { mes_label: mesLabel }
+      prioridadesEvolucao.forEach(({ codigo }) => {
+        const porMes = porPrioridadeMes.get(codigo)
+        const valor = porMes?.get(mes)
+        if (valor != null) {
+          row[`p${codigo}`] = valor
+        } else {
+          // mês sem violações: mantém o acumulado do mês anterior (sem "buraco" na linha)
+          let anterior = 0
+          for (let m = mes - 1; m >= 1; m--) {
+            const v = porMes?.get(m)
+            if (v != null) {
+              anterior = v
+              break
+            }
+          }
+          row[`p${codigo}`] = anterior
+        }
+      })
+      return row
+    })
+  }, [evolucaoData, anoEvolucao, prioridadesEvolucao])
+
+  const evolucaoTemDados = evolucaoChartData.some((row) =>
+    prioridadesEvolucao.some(({ codigo }) => (row[`p${codigo}`] as number) > 0),
+  )
 
   // top 6 features para o gráfico (evita poluição visual com as de importância 0)
   const topFeatures = useMemo(
@@ -243,8 +312,96 @@ export default function RiscoPage() {
               </Card>
             </div>
 
-            {/* Feature Importance */}
+            {/* Evolução temporal de violações OLA */}
             <Card index={2}>
+              <CardHeader
+                title="Evolução de violações OLA"
+                subtitle="Violações acumuladas mês a mês vs. limite da melhor faixa de meta"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+              {evolucaoError ? (
+                <ErrorState message={evolucaoError} onRetry={reloadEvolucao} />
+              ) : evolucaoLoading || !evolucaoData ? (
+                <ChartSkeleton height={280} />
+              ) : !evolucaoTemDados ? (
+                <EmptyState message="Sem violações registradas para o período." />
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={evolucaoChartData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <XAxis
+                        dataKey="mes_label"
+                        tick={{ fontSize: 11, fill: 'var(--color-muted)' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: 'var(--color-muted)' }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={40}
+                      />
+                      <Tooltip
+                        content={({ active, payload, label }) =>
+                          active && payload?.length ? (
+                            <ChartTooltip
+                              title={String(label)}
+                              rows={prioridadesEvolucao.map(({ codigo, label: prioLabel }) => {
+                                const item = payload.find((p) => p.dataKey === `p${codigo}`)
+                                return {
+                                  label: `${prioLabel} — acumulado`,
+                                  value: `${formatInt((item?.value as number) ?? 0)} / limite ${formatInt(limitesEvolucao.get(codigo) ?? 0)}`,
+                                  color: EVOLUCAO_COR[codigo],
+                                }
+                              })}
+                            />
+                          ) : null
+                        }
+                      />
+                      <Legend
+                        wrapperStyle={{ fontSize: 11, color: 'var(--color-muted)' }}
+                        iconType="plainline"
+                        formatter={(value: string) => {
+                          const codigo = Number(value.replace('p', ''))
+                          return prioridadesEvolucao.find((p) => p.codigo === codigo)?.label ?? value
+                        }}
+                      />
+                      {prioridadesEvolucao.map(({ codigo }) => (
+                        <ReferenceLine
+                          key={`ref-${codigo}`}
+                          y={limitesEvolucao.get(codigo) ?? 0}
+                          stroke={EVOLUCAO_COR[codigo]}
+                          strokeDasharray="4 4"
+                          label={{
+                            value: `Meta P${codigo}`,
+                            position: 'insideTopLeft',
+                            fontSize: 10,
+                            fill: EVOLUCAO_COR[codigo],
+                          }}
+                        />
+                      ))}
+                      {prioridadesEvolucao.map(({ codigo }) => (
+                        <Line
+                          key={`p${codigo}`}
+                          type="monotone"
+                          dataKey={`p${codigo}`}
+                          name={`p${codigo}`}
+                          stroke={EVOLUCAO_COR[codigo]}
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                          isAnimationActive={false}
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </>
+              )}
+            </Card>
+
+            {/* Feature Importance */}
+            <Card index={3}>
               <CardHeader
                 title="Explicabilidade do modelo"
                 subtitle="Variáveis com maior influência na previsão de violação de OLA — Random Forest"

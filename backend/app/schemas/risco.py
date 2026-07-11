@@ -45,3 +45,27 @@ class RiscoCompletoSchema(BaseModel):
         default_factory=list,
         description='Importancia de cada variavel no modelo Random Forest',
     )
+
+
+class EvolucaoMensalSchema(BaseModel):
+    '''Violacoes acumuladas mes a mes dentro de um ano.'''
+    ano: int = Field(..., description='Ano de referencia')
+    mes: int = Field(..., description='Mes (1-12)')
+    mes_label: str = Field(..., description='Label do mes (Jan, Fev, ...)')
+    prioridade_codigo: int = Field(..., description='Codigo da prioridade')
+    prioridade_label: str = Field(..., description='Label da prioridade')
+    violacoes_mes: int = Field(..., description='Violacoes ocorridas nesse mes')
+    violacoes_acumuladas: int = Field(..., description='Total acumulado ate esse mes no ano')
+    limite_melhor_faixa: int = Field(..., description='Limite da melhor faixa de meta (linha de referencia)')
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EvolucaoViolacoesSchema(BaseModel):
+    '''Payload completo da evolucao temporal de violacoes OLA.'''
+    evolucao: list[EvolucaoMensalSchema] = Field(
+        ..., description='Serie temporal de violacoes acumuladas por ano e prioridade'
+    )
+    anos_disponiveis: list[int] = Field(
+        ..., description='Anos com dados de violacoes disponiveis'
+    )

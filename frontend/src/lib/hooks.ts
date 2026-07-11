@@ -4,6 +4,7 @@ import type {
   HistoricoData,
   PrevisaoData,
   RiscoData,
+  EvolucaoViolacoes,
   ClustersData,
   RecomendacoesData,
   TipoRecomendacao,
@@ -61,8 +62,17 @@ function useApiData<T>(path: string, params?: Record<string, unknown>): AsyncSta
   return { data, loading, error, reload, version }
 }
 
-export function useHistorico() {
-  return useApiData<HistoricoData>("/api/v1/historico")
+export interface FiltroHistorico {
+  dataInicio?: string
+  dataFim?: string
+}
+
+export function useHistorico(filtro?: FiltroHistorico) {
+  const params =
+    filtro?.dataInicio || filtro?.dataFim
+      ? { data_inicio: filtro.dataInicio, data_fim: filtro.dataFim }
+      : undefined
+  return useApiData<HistoricoData>("/api/v1/historico", params)
 }
 
 export function usePrevisao() {
@@ -72,6 +82,11 @@ export function usePrevisao() {
 export function useRisco(ano?: number | "todos") {
   const params = ano && ano !== "todos" ? { ano } : undefined
   return useApiData<RiscoData>("/api/v1/risco", params)
+}
+
+export function useEvolucaoViolacoes(ano?: number) {
+  const params = ano ? { ano } : undefined
+  return useApiData<EvolucaoViolacoes>("/api/v1/risco/evolucao", params)
 }
 
 export function useClusters() {
