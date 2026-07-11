@@ -2,9 +2,11 @@ import { useState, type FormEvent } from "react"
 import { useNavigate, useLocation, Navigate } from "react-router-dom"
 import { Loader2, AlertCircle, Mail, Lock } from "lucide-react"
 import { useAuth } from "@/lib/auth"
+import { useTema } from "@/lib/tema"
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth()
+  const { tema } = useTema()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState("")
@@ -38,7 +40,7 @@ export default function LoginPage() {
       <div className="group relative w-full max-w-5xl rounded-3xl animate-enter">
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-px -z-10 rounded-3xl bg-[var(--color-glow-blue)] opacity-0 blur-sm transition-opacity duration-500 ease-in-out group-hover:opacity-[0.22]"
+          className="pointer-events-none absolute -inset-px -z-10 rounded-3xl bg-[var(--color-glow-blue)] opacity-0 blur-sm transition-opacity duration-500 ease-in-out group-hover:opacity-[var(--glow-opacity)]"
         />
         <div className="flex min-h-[680px] overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors duration-500 ease-in-out hover:border-[var(--color-glow-blue)]/22">
           {/* Left column — hero image */}
@@ -56,7 +58,7 @@ export default function LoginPage() {
               {/* Logo + heading */}
               <div className="mb-10 flex flex-col items-center text-center">
                 <img
-                  src="/logo-sentinel.svg"
+                  src={tema === "light" ? "/logo-sentinel-light.svg" : "/logo-sentinel.svg"}
                   alt="Sentinel"
                   className="h-40 w-auto"
                 />
@@ -103,7 +105,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-semibold text-[#06141b] transition-all hover:bg-[var(--color-accent-2)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-semibold text-[var(--color-accent-contrast)] transition-all hover:bg-[var(--color-accent-2)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loading && <Loader2 className="h-4 w-4 animate-spin-slow" />}
                     {loading ? "Entrando..." : "Entrar"}

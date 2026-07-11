@@ -72,7 +72,7 @@ export function NotificationCenter() {
         >
           <Bell className="h-[18px] w-[18px]" />
           {unread && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--color-risk-high)] ring-2 ring-[#050810]" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--color-risk-high)] ring-2 ring-[var(--color-topbar)]" />
           )}
         </button>
 

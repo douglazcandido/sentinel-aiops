@@ -1,14 +1,17 @@
 import type { ReactNode } from "react"
 
+// Referências às CSS variables do tema, para os gráficos mudarem de cor
+// automaticamente no toggle claro/escuro (var() em atributos SVG funciona
+// nos navegadores modernos).
 export const CHART_COLORS = {
-  accent: "#22d3ee",
-  accent2: "#0ea5e9",
-  high: "#f43f5e",
-  med: "#f59e0b",
-  low: "#10b981",
-  grid: "#232a36",
-  axis: "#5c6473",
-  muted: "#8b94a3",
+  accent: "var(--color-accent)",
+  accent2: "var(--color-accent-2)",
+  high: "var(--color-risk-high)",
+  med: "var(--color-risk-med)",
+  low: "var(--color-risk-low)",
+  grid: "var(--color-border)",
+  axis: "var(--color-muted-2)",
+  muted: "var(--color-muted)",
 }
 
 export const RISK_COLORS: Record<string, string> = {
@@ -36,7 +39,7 @@ export function chartStagger(i: number, step = 140) {
   return i * step
 }
 
-/** Shared dark tooltip wrapper used across all charts. */
+/** Shared tooltip wrapper used across all charts. */
 export function ChartTooltip({
   title,
   rows,
@@ -45,7 +48,7 @@ export function ChartTooltip({
   rows: { label: string; value: ReactNode; color?: string }[]
 }) {
   return (
-    <div className="rounded-lg border border-[var(--color-accent)]/40 bg-[#0c1119] px-3 py-2 shadow-xl">
+    <div className="rounded-lg border border-[var(--color-accent)]/40 bg-[var(--color-surface-2)] px-3 py-2 shadow-xl">
       <p className="mb-1.5 text-xs font-semibold text-[var(--color-foreground)]">{title}</p>
       <div className="flex flex-col gap-1">
         {rows.map((r, i) => (

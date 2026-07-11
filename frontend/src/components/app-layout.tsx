@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { Outlet } from "react-router-dom"
-import { UserRound } from "lucide-react"
+import { Moon, Sun, UserRound } from "lucide-react"
 import { Sidebar, SIDEBAR_COLLAPSED_W, SIDEBAR_EXPANDED_W } from "./sidebar"
 import { NotificationCenter } from "./notification-bell"
 import { PerfilPanel } from "./perfil-panel"
+import { useTema } from "@/lib/tema"
 
 export function AppLayout() {
+  const { tema, alternarTema } = useTema()
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(true)
   const [perfilOpen, setPerfilOpen] = useState(false)
@@ -15,15 +17,23 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* Global top bar */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[#050810] px-5">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-topbar)] px-5">
         <div className="flex items-center gap-3">
           <img
-            src="/logo-sentinel-topo.svg"
+            src={tema === "light" ? "/logo-sentinel-topo-light.svg" : "/logo-sentinel-topo.svg"}
             alt="Sentinel"
             className="h-10 w-auto"
           />
         </div>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={alternarTema}
+            title={tema === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-foreground)]"
+          >
+            {tema === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+          </button>
           <NotificationCenter />
           <button
             type="button"

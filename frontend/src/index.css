@@ -25,7 +25,55 @@
   --color-risk-med-soft: rgba(245, 158, 11, 0.14);
   --color-risk-low: #10b981;
   --color-risk-low-soft: rgba(16, 185, 129, 0.14);
+  /* Top bar global (quase-preta no escuro, branca no claro) */
+  --color-topbar: #050810;
+  /* Cor intermediária do shimmer do skeleton */
+  --color-skeleton-sheen: #252d3a;
+  /* Texto sobre superfícies accent (botões primários) */
+  --color-accent-contrast: #06141b;
   --radius: 0.75rem;
+}
+:root {
+  /* Intensidade do glow decorativo (mais forte no claro para seguir visível) */
+  --glow-opacity: 0.22;
+}
+/* Tema claro — sobrescreve todas as variáveis de cor. O escuro segue sendo o padrão. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Superfícies */
+  --color-background: #f0f2f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f8f9fb;
+  --color-surface-3: #eef0f3;
+
+  /* Texto */
+  --color-foreground: #0f1923;
+  --color-muted: #4a5568;
+  --color-muted-2: #8896a5;
+
+  /* Bordas */
+  --color-border: #dde1e7;
+  --color-border-strong: #c8cdd6;
+
+  /* Accent — ciano ligeiramente mais escuro para contraste em fundo claro */
+  --color-accent: #0891b2;
+  --color-accent-2: #0369a1;
+  --color-accent-soft: rgba(8, 145, 178, 0.12);
+  --color-glow-blue: #0891b2;
+
+  /* Semânticas — ajustadas para contraste em fundo claro */
+  --color-risk-high: #e11d48;
+  --color-risk-high-soft: rgba(225, 29, 72, 0.12);
+  --color-risk-med: #d97706;
+  --color-risk-med-soft: rgba(217, 119, 6, 0.12);
+  --color-risk-low: #059669;
+  --color-risk-low-soft: rgba(5, 150, 105, 0.12);
+
+  --color-topbar: #ffffff;
+  --color-skeleton-sheen: #ffffff;
+  --color-accent-contrast: #ffffff;
+  --glow-opacity: 0.55;
 }
 @layer base {
   * {
@@ -71,7 +119,7 @@
   border: 2px solid var(--color-background);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4453;
+  background: var(--color-muted-2);
 }
 /* Animations */
 @keyframes fade-slide-up {
@@ -120,7 +168,7 @@
   background: linear-gradient(
     90deg,
     var(--color-surface-3) 25%,
-    #252d3a 50%,
+    var(--color-skeleton-sheen) 50%,
     var(--color-surface-3) 75%
   );
   background-size: 200% 100%;

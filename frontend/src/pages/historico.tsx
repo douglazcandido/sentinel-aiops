@@ -273,7 +273,7 @@ export default function HistoricoPage() {
                         />
                         <YAxis {...axisProps} tickFormatter={(v) => abbreviateNumber(v)} width={42} />
                         <Tooltip
-                          cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                          cursor={{ fill: "var(--color-accent-soft)", fillOpacity: 0.35 }}
                           content={({ active, payload }) =>
                             active && payload?.length ? (
                               <ChartTooltip
@@ -331,7 +331,7 @@ export default function HistoricoPage() {
                         />
                         <YAxis {...axisProps} tickFormatter={(v) => abbreviateNumber(v)} width={42} />
                         <Tooltip
-                          cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                          cursor={{ fill: "var(--color-accent-soft)", fillOpacity: 0.35 }}
                           content={({ active, payload }) =>
                             active && payload?.length ? (
                               <ChartTooltip

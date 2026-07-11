@@ -5,6 +5,10 @@ import { AuthProvider } from "@/lib/auth"
 import App from "./App"
 import "./index.css"
 
+// Aplica o tema salvo de forma síncrona, antes do primeiro render (anti-FOUC).
+const temaSalvo = localStorage.getItem("sentinel_tema") || "dark"
+document.documentElement.setAttribute("data-theme", temaSalvo)
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
