@@ -1,3 +1,4 @@
+import torch
 import pandas as pd
 from neuralprophet import NeuralProphet
 from sqlalchemy import create_engine
@@ -10,6 +11,8 @@ from app.models.gold_models import PrevisaoVolume
 logger = setup_logger(__name__)
 
 HORIZONTE_DIAS = [1, 7]
+RANDOM_SEED = 42
+
 
 def fetch_serie_temporal(engine) -> pd.DataFrame:
     logger.info('buscando serie temporal do silver')
@@ -27,8 +30,13 @@ def fetch_serie_temporal(engine) -> pd.DataFrame:
     logger.info('serie temporal carregada: %d dias', len(df))
     return df
 
+
 def treinar_neuralprophet(df: pd.DataFrame) -> NeuralProphet:
-    logger.info('treinando modelo neuralprophet')
+    logger.info('treinando modelo neuralprophet (seed=%d)', RANDOM_SEED)
+
+    # trava seed do pytorch para resultados deterministicos entre execucoes
+    torch.manual_seed(RANDOM_SEED)
+
     model = NeuralProphet(
         yearly_seasonality=True,
         weekly_seasonality=True,
@@ -42,16 +50,15 @@ def treinar_neuralprophet(df: pd.DataFrame) -> NeuralProphet:
     logger.info('modelo neuralprophet treinado com sucesso')
     return model
 
+
 def gerar_previsoes(model: NeuralProphet, df: pd.DataFrame, horizonte: int) -> pd.DataFrame:
     logger.info('gerando previsao para D+%d', horizonte)
-
     ultima_data = df['ds'].max()
     datas_futuras = pd.date_range(
         start=ultima_data + pd.Timedelta(days=1),
         periods=horizonte,
         freq='D',
     )
-
     linhas = []
     for data in datas_futuras:
         df_pred = df.copy()
@@ -65,14 +72,13 @@ def gerar_previsoes(model: NeuralProphet, df: pd.DataFrame, horizonte: int) -> p
             'yhat': max(0.0, float(ultima_previsao[col_yhat])),
             'horizonte_dias': horizonte,
         })
-
     previsoes = pd.DataFrame(linhas)
     logger.info('previsoes geradas: %d registros para D+%d', len(previsoes), horizonte)
     return previsoes
 
+
 def salvar_previsoes(previsoes: pd.DataFrame, session: Session) -> None:
     logger.info('salvando previsoes no gold')
-
     for _, row in previsoes.iterrows():
         data_ref = row['data_referencia'].date()
         horizonte = int(row['horizonte_dias'])
@@ -89,22 +95,20 @@ def salvar_previsoes(previsoes: pd.DataFrame, session: Session) -> None:
             existente.limite_superior = None
         else:
             session.add(PrevisaoVolume(
-                data_referencia = data_ref,
-                horizonte_dias = horizonte,
-                total_previsto = previsto,
-                limite_inferior = None,
-                limite_superior = None,
+                data_referencia=data_ref,
+                horizonte_dias=horizonte,
+                total_previsto=previsto,
+                limite_inferior=None,
+                limite_superior=None,
             ))
-
     session.commit()
     logger.info('previsoes salvas: %d registros', len(previsoes))
 
+
 def run() -> None:
     logger.info('=== inicio do pipeline neuralprophet ===')
-
     try:
         engine = create_engine(DATABASE_URL)
-
         df = fetch_serie_temporal(engine)
         model = treinar_neuralprophet(df)
 
@@ -121,6 +125,7 @@ def run() -> None:
         raise
 
     logger.info('=== fim do pipeline neuralprophet ===')
+
 
 if __name__ == '__main__':
     run()
