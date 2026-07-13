@@ -1,0 +1,41 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: incidentes
+        description: "Cópia bruta do XLSX de origem (LW-DATASET.xlsx), sem transformação."
+        columns:
+          - name: id
+            description: "UUID gerado na carga do bronze."
+          - name: numero
+            description: "Número do incidente."
+          - name: prioridade
+            description: "Prioridade textual original (ex: '1 - Crítica')."
+          - name: produto
+          - name: categoria
+          - name: subcategoria
+          - name: grupo_designado
+            description: "Grupo responsável pelo incidente."
+          - name: item_configuracao
+          - name: aberto
+            description: "Data/hora de abertura (texto bruto)."
+          - name: resolvido
+            description: "Data/hora de resolução (texto bruto)."
+          - name: encerrado
+            description: "Data/hora de encerramento (texto bruto)."
+          - name: duracao
+            description: "Duração em segundos (texto bruto)."
+          - name: codigo_fechamento
+          - name: descricao_resumida
+          - name: solucao
+          - name: aberto_por
+          - name: incidente_pai
+          - name: status
+          - name: entrou_kpi
+            description: "Flag textual 'SIM'/'NAO' indicando elegibilidade de KPI."
+          - name: kpi_violado
+            description: "Flag textual 'SIM'/'NAO' indicando violação de KPI."
+          - name: carga_origem
+          - name: carga_em

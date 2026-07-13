@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: dim_data
+    description: "Dimensão de tempo derivada das datas de abertura em silver.fato_incidentes."
+    columns:
+      - name: data
+        tests:
+          - not_null
+          - unique
+
+  - name: historico_diario
+    description: "Totais diários gerais de incidentes, KPI e violações."
+    columns:
+      - name: data
+        tests:
+          - not_null
+          - unique
+
+  - name: historico_hora_diario
+    description: "Volume de incidentes por hora do dia, por data de abertura."
+    columns:
+      - name: data
+        tests:
+          - not_null
+      - name: hora
+        tests:
+          - not_null
+
+  - name: historico_grupo_diario
+    description: "Volume diário de incidentes por grupo/equipe."
+    columns:
+      - name: data
+        tests:
+          - not_null
+      - name: grupo_id
+        tests:
+          - not_null
+
+  - name: historico_violacoes_diario
+    description: "Violações de KPI diárias por prioridade, apenas incidentes elegíveis (entrou_kpi = true)."
+    columns:
+      - name: data
+        tests:
+          - not_null
+      - name: prioridade_id
+        tests:
+          - not_null

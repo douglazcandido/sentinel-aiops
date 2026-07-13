@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: gold
+    schema: gold
+    tables:
+      - name: dim_grupo
+        description: >
+          Dimensão de grupos do Gold. Não é um modelo dbt: é populada fora
+          deste projeto (script Python / pipeline legado). Referenciada aqui
+          apenas para lookup de id a partir do nome do grupo.
+        columns:
+          - name: id
+          - name: nome
+
+      - name: dim_prioridade
+        description: >
+          Dimensão de prioridade do Gold. Não é um modelo dbt: é populada
+          via seed fixo em backend/sql/gold.sql. Referenciada aqui apenas
+          para lookup de id a partir do código da prioridade.
+        columns:
+          - name: id
+          - name: codigo
+          - name: label
+          - name: prazo_ola_horas
+          - name: elegivel_kpi

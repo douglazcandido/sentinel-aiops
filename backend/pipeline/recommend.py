@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session
 
 from app.core.config import DATABASE_URL
@@ -7,17 +7,15 @@ from app.core.logger import setup_logger
 from app.models.gold_models import (
     ClusterPerfil,
     DimGrupo,
-    HistoricoVolumeGrupo,
+    HistoricoGrupoDiario,
     Recomendacao,
     RiscoOlaKpi,
 )
 
-
 logger = setup_logger(__name__)
 
 DIAS_LABEL = {0: 'Segunda', 1: 'Terca', 2: 'Quarta', 3: 'Quinta', 4: 'Sexta', 5: 'Sabado', 6: 'Domingo'}
-
-LIMIAR_PCT_VIOLACAO_CLUSTER = 0.5  # % minimo para considerar uma janela "critica"
+LIMIAR_PCT_VIOLACAO_CLUSTER = 0.5
 TOP_N_GRUPOS_EQUIPE = 3
 TOP_N_CLUSTERS_JANELA = 3
 
@@ -29,35 +27,44 @@ TOP_N_CLUSTERS_JANELA = 3
 def gerar_recomendacoes_equipe(session: Session) -> list[dict]:
     logger.info('gerando recomendacoes de equipe')
 
+    # agrega historico_grupo_diario para obter totais do periodo completo
     rows = (
-        session.query(HistoricoVolumeGrupo, DimGrupo)
-        .join(DimGrupo, HistoricoVolumeGrupo.grupo_id == DimGrupo.id)
-        .filter(HistoricoVolumeGrupo.total_violacoes > 0)
-        .order_by(HistoricoVolumeGrupo.total_violacoes.desc())
+        session.query(
+            DimGrupo.nome.label('grupo_nome'),
+            func.sum(HistoricoGrupoDiario.total_violacoes).label('total_violacoes'),
+            func.sum(HistoricoGrupoDiario.sem_intervencao).label('sem_intervencao'),
+            func.sum(HistoricoGrupoDiario.total_incidentes).label('total_incidentes'),
+        )
+        .join(DimGrupo, HistoricoGrupoDiario.grupo_id == DimGrupo.id)
+        .group_by(DimGrupo.nome)
+        .having(func.sum(HistoricoGrupoDiario.total_violacoes) > 0)
+        .order_by(func.sum(HistoricoGrupoDiario.total_violacoes).desc())
         .limit(TOP_N_GRUPOS_EQUIPE)
         .all()
     )
 
-    total_violacoes_geral = sum(
-        r.total_violacoes
-        for r in session.query(HistoricoVolumeGrupo).all()
-    )
+    total_violacoes_geral = session.query(
+        func.sum(HistoricoGrupoDiario.total_violacoes)
+    ).scalar() or 0
 
     recomendacoes = []
-    for historico, grupo in rows:
+    for row in rows:
         pct_do_total = (
-            round(historico.total_violacoes / total_violacoes_geral * 100, 1)
+            round(row.total_violacoes / total_violacoes_geral * 100, 1)
             if total_violacoes_geral > 0 else 0.0
         )
-
+        pct_sem_intervencao = (
+            round(row.sem_intervencao / row.total_incidentes * 100, 2)
+            if row.total_incidentes > 0 else 0.0
+        )
         recomendacoes.append({
             'tipo': 'equipe',
             'prioridade': None,
-            'grupo_nome': grupo.nome,
-            'titulo': f'Reforco de equipe sugerido: {grupo.nome}',
+            'grupo_nome': row.grupo_nome,
+            'titulo': f'Reforco de equipe sugerido: {row.grupo_nome}',
             'descricao': (
-                f'{grupo.nome} concentra {historico.total_violacoes} violacoes de OLA '
-                f'({pct_do_total}% do total), com {historico.pct_sem_intervencao}% dos '
+                f'{row.grupo_nome} concentra {row.total_violacoes} violacoes de OLA '
+                f'({pct_do_total}% do total), com {pct_sem_intervencao}% dos '
                 f'incidentes resolvidos sem intervencao humana. Considere reforco de '
                 f'equipe ou revisao de processos para essa equipe.'
             ),
@@ -86,7 +93,6 @@ def gerar_recomendacoes_janela_critica(session: Session) -> list[dict]:
     for cluster in rows:
         dia_label = DIAS_LABEL.get(cluster.dia_semana_predominante, 'dia indeterminado')
         hora = cluster.hora_predominante
-
         recomendacoes.append({
             'tipo': 'janela_critica',
             'prioridade': None,
@@ -132,7 +138,6 @@ def gerar_recomendacoes_produto(engine) -> list[dict]:
         categoria = row['categoria']
         subcategoria = row['subcategoria'] or 'subcategoria nao especificada'
         total = int(row['total'])
-
         recomendacoes.append({
             'tipo': 'produto_recorrente',
             'prioridade': None,
@@ -167,7 +172,6 @@ def salvar_recomendacoes(recomendacoes: list[dict], session: Session) -> None:
     grupos = [r['grupo_nome'] for r in recomendacoes if r['grupo_nome']]
     dim_grupo = sincronizar_dim_grupo(grupos, session)
 
-    # limpa recomendacoes antigas do mesmo tipo antes de inserir as novas
     tipos = {r['tipo'] for r in recomendacoes}
     for tipo in tipos:
         session.query(Recomendacao).filter_by(tipo=tipo).delete()
@@ -175,7 +179,6 @@ def salvar_recomendacoes(recomendacoes: list[dict], session: Session) -> None:
 
     for r in recomendacoes:
         grupo_id = dim_grupo.get(r['grupo_nome']) if r['grupo_nome'] else None
-
         session.add(Recomendacao(
             tipo=r['tipo'],
             prioridade=r['prioridade'],

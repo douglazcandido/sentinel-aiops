@@ -1,22 +1,46 @@
+import subprocess
 import sys
 import time
+from pathlib import Path
 
 from app.core.logger import setup_logger
-from pipeline import aggregate, clean, ingest, recommend, train_models
+from pipeline import ingest, recommend, train_models, truncate
 
 logger = setup_logger(__name__)
 
+# caminho absoluto para a pasta do projeto dbt
+DBT_PROJECT_DIR = Path(__file__).resolve().parent.parent / 'dbt'
+
+
+def run_dbt(select: str) -> None:
+    '''Executa dbt run para um subset de modelos.
+    Lança RuntimeError se o dbt retornar código de saída diferente de zero.
+    '''
+    cmd = [
+        'dbt', 'run',
+        '--profiles-dir', str(DBT_PROJECT_DIR),
+        '--project-dir', str(DBT_PROJECT_DIR),
+        '--select', select,
+        '--threads', '1',
+    ]
+    logger.info('executando: %s', ' '.join(cmd))
+    result = subprocess.run(cmd, capture_output=False)
+    if result.returncode != 0:
+        raise RuntimeError(f'dbt run falhou para --select {select} (returncode={result.returncode})')
+
+
 ETAPAS = [
-    ('ingest', ingest.run),
-    ('clean', clean.run),
-    ('aggregate', aggregate.run),
-    ('train_models', train_models.run),
-    ('recommend', recommend.run),
+    ('ingest',              ingest.run),
+    ('dbt:silver',          lambda: run_dbt('silver')),
+    ('dbt:gold',            lambda: run_dbt('gold')),
+    ('truncate:preditivo',  truncate.run),
+    ('train_models',        train_models.run),
+    ('recommend',           recommend.run),
 ]
+
 
 def run() -> None:
     logger.info('=== inicio do pipeline completo sentinel ===')
-
     inicio_total = time.time()
 
     for nome, funcao in ETAPAS:

@@ -1,0 +1,26 @@
+name: 'sentinel'
+version: '1.0.0'
+config-version: 2
+
+profile: 'sentinel'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+log-path: "logs"
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  sentinel:
+    silver:
+      +materialized: table
+      +schema: silver
+    gold:
+      +materialized: table
+      +schema: gold

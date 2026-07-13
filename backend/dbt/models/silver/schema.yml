@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: dim_prioridade
+    description: "5 niveis de prioridade fixos, com prazo de OLA e elegibilidade de KPI."
+    columns:
+      - name: codigo
+        description: "Codigo numerico da prioridade (1 a 5)."
+        tests:
+          - not_null
+          - unique
+      - name: elegivel_kpi
+        description: "Indica se a prioridade entra no calculo de KPI (codigos 1, 2, 3)."
+        tests:
+          - not_null
+
+  - name: dim_grupo
+    description: "Grupos designados encontrados na base de incidentes."
+    columns:
+      - name: nome
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_status
+    description: "3 status fixos de incidente, com flag de 'sem intervencao'."
+    columns:
+      - name: nome
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_categoria
+    description: "Combinacoes unicas de produto/categoria/subcategoria (podem conter nulos)."
+
+  - name: fato_incidentes
+    description: "Tabela fato com um registro por incidente e as features derivadas do bronze."
+    columns:
+      - name: numero
+        description: "Numero do incidente (chave natural)."
+        tests:
+          - not_null
+          - unique
+      - name: prioridade_id
+        tests:
+          - not_null
+      - name: grupo_id
+        tests:
+          - not_null
+      - name: abertura_data
+        tests:
+          - not_null
+      - name: duracao_segundos
+        tests:
+          - not_null
