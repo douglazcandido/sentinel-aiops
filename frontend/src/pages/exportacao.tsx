@@ -131,27 +131,27 @@ export default function ExportacaoPage() {
       case 'kpis_gerais':
         return historico ? [historico.kpis_gerais as unknown as Record<string, unknown>] : []
       case 'volume_hora':
-        return historico?.volume_por_hora ?? []
+        return (historico?.volume_por_hora ?? []) as unknown as Record<string, unknown>[]
       case 'volume_dia':
-        return historico?.volume_por_dia_semana ?? []
+        return (historico?.volume_por_dia_semana ?? []) as unknown as Record<string, unknown>[]
       case 'volume_mensal':
-        return historico?.volume_diario ?? []
+        return (historico?.volume_diario ?? []) as unknown as Record<string, unknown>[]
       case 'violacoes_mensal':
-        return historico?.violacoes_diario ?? []
+        return (historico?.violacoes_diario ?? []) as unknown as Record<string, unknown>[]
       case 'volume_grupo':
-        return historico?.volume_por_grupo ?? []
+        return (historico?.volume_por_grupo ?? []) as unknown as Record<string, unknown>[]
       case 'previsao':
-        return previsao ? [previsao.d1, ...previsao.d7] : []
+        return (previsao ? [previsao.d1, ...previsao.d7] : []) as unknown as Record<string, unknown>[]
       case 'risco_distribuicao':
-        return risco?.distribuicao_risco ?? []
+        return (risco?.distribuicao_risco ?? []) as unknown as Record<string, unknown>[]
       case 'risco_kpis':
-        return risco?.kpis_ola ?? []
+        return (risco?.kpis_ola ?? []) as unknown as Record<string, unknown>[]
       case 'feature_importance':
-        return risco?.feature_importance ?? []
+        return (risco?.feature_importance ?? []) as unknown as Record<string, unknown>[]
       case 'clusters':
-        return clusters?.clusters ?? []
+        return (clusters?.clusters ?? []) as unknown as Record<string, unknown>[]
       case 'recomendacoes':
-        return recomendacoes?.recomendacoes ?? []
+        return (recomendacoes?.recomendacoes ?? []) as unknown as Record<string, unknown>[]
       default:
         return []
     }
