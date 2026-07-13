@@ -13,3 +13,5 @@ data/
 README.md
 pyrefly.toml
 lightning_logs/
+dbt/target/
+dbt/logs/
