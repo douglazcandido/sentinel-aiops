@@ -150,3 +150,10 @@ eda_output
 # Cache de build incremental do TypeScript
 # -----------------------------
 frontend/tsconfig.tsbuildinfo
+
+# -----------------------------
+# dbt
+# -----------------------------
+backend/dbt/target/
+backend/dbt/dbt_packages/
+backend/dbt/logs/
