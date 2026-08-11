@@ -117,7 +117,7 @@ Docker e Docker Compose instalados.
 ### 1. Subir a infraestrutura
 
 ```bash
-git clone https://github.com/<seu-usuario>/sentinel-aiops.git
+git clone https://github.com/douglazcandido/sentinel-aiops.git
 cd sentinel-aiops
 docker compose up -d --build
 ```
