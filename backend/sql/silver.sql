@@ -1,10 +1,19 @@
 -- Silver (Modelo Dimensional)
+--
+-- AVISO: as 5 tabelas abaixo (dim_prioridade, dim_grupo, dim_status, dim_categoria,
+-- fato_incidentes) sao recriadas do zero pelos modelos dbt equivalentes em
+-- backend/dbt/models/silver/ (materialized: table => DROP + CREATE TABLE AS a cada
+-- `dbt run --select silver`). Isso significa que os PRIMARY KEY/FOREIGN KEY/UNIQUE
+-- e os indices definidos aqui NAO sobrevivem apos a primeira execucao do pipeline via
+-- dbt; eles servem apenas como dicionario de dados / referencia da estrutura esperada.
+-- Os indices de fato_incidentes sao reaplicados de fato via config() no proprio
+-- modelo dbt (backend/dbt/models/silver/fato_incidentes.sql).
 
 CREATE SCHEMA IF NOT EXISTS silver;
 
 -- ---------------------------------------------------------
 -- DIM_PRIORIDADE
--- 5 linhas fixas, populadas pelo clean.py
+-- 5 linhas fixas, populadas pelo modelo dbt silver/dim_prioridade.sql
 -- ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS silver.dim_prioridade (
     id BIGSERIAL PRIMARY KEY,

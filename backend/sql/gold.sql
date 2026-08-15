@@ -1,6 +1,14 @@
 -- Camada Gold (Modelo Dimensional)
--- Duas frentes: historico_* e preditivo_*
+-- Duas frentes: historica (dbt) e preditiva (scripts Python de ML/recomendacao)
 -- Dims proprias, independentes do Silver
+--
+-- A frente historica (dim_data, historico_diario, historico_hora_diario,
+-- historico_grupo_diario, historico_violacoes_diario) e criada inteiramente pelos
+-- modelos dbt em backend/dbt/models/gold/ (materialized: table) e NAO tem DDL
+-- proprio aqui — nao existe risco de conflito de nomes com as tabelas abaixo.
+-- gold.dim_prioridade e gold.dim_grupo, por outro lado, sao consumidas pelo dbt como
+-- source() (backend/dbt/models/gold/sources.yml) mas continuam sendo criadas e
+-- mantidas por este script e pelos scripts Python do pipeline preditivo.
 
 CREATE SCHEMA IF NOT EXISTS gold;
 
@@ -16,78 +24,12 @@ CREATE TABLE IF NOT EXISTS gold.dim_prioridade (
     elegivel_kpi BOOLEAN NOT NULL
 );
 
+-- populada via pre-hook dbt (backend/dbt/dbt_project.yml, a partir de
+-- silver.dim_grupo) e, na frente preditiva, pelos scripts random_forest.py,
+-- kmeans.py e recommend.py (sincronizar_dim_grupo)
 CREATE TABLE IF NOT EXISTS gold.dim_grupo (
     id BIGSERIAL PRIMARY KEY,
     nome TEXT NOT NULL UNIQUE
-);
-
--- =========================================================
--- FRENTE HISTORICA
--- Agregacoes sobre o Silver, alimentam o painel historico
--- =========================================================
-
--- KPIs gerais do topo do painel (4 cards)
-CREATE TABLE IF NOT EXISTS gold.historico_kpis_gerais (
-    id BIGSERIAL PRIMARY KEY,
-    total_incidentes INTEGER NOT NULL,
-    pct_aberto_automaticamente NUMERIC(5,2) NOT NULL,
-    pct_sem_intervencao NUMERIC(5,2) NOT NULL,
-    total_violacoes_ola INTEGER NOT NULL,
-    total_no_kpi INTEGER NOT NULL,
-    periodo_inicio DATE NOT NULL,
-    periodo_fim DATE NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now()
-);
-
--- Volume por hora do dia (0-23)
-CREATE TABLE IF NOT EXISTS gold.historico_volume_hora (
-    id BIGSERIAL PRIMARY KEY,
-    hora SMALLINT NOT NULL UNIQUE,   -- 0-23
-    total_incidentes INTEGER NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now()
-);
-
--- Volume por dia da semana (0=Seg ... 6=Dom)
-CREATE TABLE IF NOT EXISTS gold.historico_volume_dia_semana (
-    id BIGSERIAL PRIMARY KEY,
-    dia_semana SMALLINT NOT NULL, -- 0-6
-    dia_label TEXT NOT NULL, -- Seg, Ter...Dom
-    total_incidentes INTEGER NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now()
-);
-
--- Volume mensal por prioridade (serie historica)
-CREATE TABLE IF NOT EXISTS gold.historico_volume_mensal (
-    id BIGSERIAL PRIMARY KEY,
-    ano SMALLINT NOT NULL,
-    mes SMALLINT NOT NULL,
-    prioridade_id BIGINT NOT NULL REFERENCES gold.dim_prioridade (id),
-    total_incidentes INTEGER NOT NULL,
-    total_no_kpi INTEGER NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now(),
-    UNIQUE (ano, mes, prioridade_id)
-);
-
--- Violacoes de OLA por mes e prioridade
-CREATE TABLE IF NOT EXISTS gold.historico_violacoes_mensal (
-    id BIGSERIAL PRIMARY KEY,
-    ano SMALLINT NOT NULL,
-    mes SMALLINT NOT NULL,
-    prioridade_id BIGINT NOT NULL REFERENCES gold.dim_prioridade (id),
-    total_violacoes INTEGER NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now(),
-    UNIQUE (ano, mes, prioridade_id)
-);
-
--- Volume total por grupo/equipe
-CREATE TABLE IF NOT EXISTS gold.historico_volume_grupo (
-    id BIGSERIAL PRIMARY KEY,
-    grupo_id BIGINT NOT NULL REFERENCES gold.dim_grupo (id),
-    total_incidentes INTEGER NOT NULL,
-    total_no_kpi INTEGER NOT NULL,
-    total_violacoes INTEGER NOT NULL,
-    pct_sem_intervencao NUMERIC(5,2) NOT NULL,
-    gerado_em TIMESTAMP DEFAULT now()
 );
 
 -- =========================================================
@@ -179,12 +121,6 @@ CREATE TABLE IF NOT EXISTS gold.recomendacao (
 -- =========================================================
 -- INDICES
 -- =========================================================
-
-CREATE INDEX IF NOT EXISTS idx_gold_hist_vol_mensal_ano_mes
-    ON gold.historico_volume_mensal (ano, mes);
-
-CREATE INDEX IF NOT EXISTS idx_gold_hist_viol_mensal_ano_mes
-    ON gold.historico_violacoes_mensal (ano, mes);
 
 CREATE INDEX IF NOT EXISTS idx_gold_previsao_data
     ON gold.previsao_volume (data_referencia, horizonte_dias);
