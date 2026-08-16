@@ -1,3 +1,16 @@
+{{
+    config(
+        indexes=[
+            {'columns': ['abertura_data']},
+            {'columns': ['entrou_kpi', 'kpi_violado']},
+            {'columns': ['prioridade_id']},
+            {'columns': ['grupo_id']},
+            {'columns': ['entrou_kpi', 'prioridade_id', 'abertura_data']},
+            {'columns': ['bronze_id']},
+        ]
+    )
+}}
+
 with source as (
 
     select * from {{ source('bronze', 'incidentes') }}

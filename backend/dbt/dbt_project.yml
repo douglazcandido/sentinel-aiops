@@ -16,6 +16,17 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# rede de seguranca para quem rodar `dbt run` isoladamente (fora do
+# pipeline/API). O bootstrap "de verdade" (bronze.incidentes, tabelas do gold
+# preditivo, auth) fica em backend/pipeline/bootstrap.py, que le
+# backend/sql/*.sql como fonte unica de verdade — duplicar aquele DDL inteiro
+# aqui via hooks so pra rodar via dbt criaria duas fontes de verdade
+# divergentes. Isso aqui so garante os schemas, o minimo pra `dbt run
+# --select silver` isolado nao quebrar por falta do schema bronze.
+on-run-start:
+  - "create schema if not exists bronze"
+  - "create schema if not exists gold"
+
 models:
   sentinel:
     silver:
@@ -24,3 +35,10 @@ models:
     gold:
       +materialized: table
       +schema: gold
+      # gold.dim_grupo so e populada pelos scripts Python de ML (random_forest.py /
+      # kmeans.py), que rodam DEPOIS da etapa dbt:gold no pipeline. Sem este hook,
+      # o JOIN de historico_grupo_diario.sql contra gold.dim_grupo nao encontra
+      # nenhuma linha na primeira execucao do pipeline e a tabela fica vazia.
+      # Sincroniza a partir de silver.dim_grupo (ja populada pela etapa dbt:silver
+      # anterior) antes de cada modelo gold ser materializado.
+      +pre-hook: "insert into gold.dim_grupo (nome) select nome from silver.dim_grupo on conflict (nome) do nothing"

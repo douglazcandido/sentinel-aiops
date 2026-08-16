@@ -11,6 +11,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sentinel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
@@ -27,7 +32,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -97,6 +103,11 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
       SENTINEL_DATA_PATH: ${SENTINEL_DATA_PATH}
+      # nome da imagem/rede do backend, derivados do nome do projeto do compose
+      # (mesma logica que o compose usa para nomear a propria imagem/rede) —
+      # consumidos pela DAG sentinel_pipeline.py para nao depender do nome da pasta
+      BACKEND_IMAGE: ${COMPOSE_PROJECT_NAME}-backend
+      DOCKER_NETWORK: ${COMPOSE_PROJECT_NAME}_default
     volumes:
       - ./backend/dags:/opt/airflow/dags
       - airflow-logs:/opt/airflow/logs
@@ -127,6 +138,8 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg=}
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       SENTINEL_DATA_PATH: ${SENTINEL_DATA_PATH}
+      BACKEND_IMAGE: ${COMPOSE_PROJECT_NAME}-backend
+      DOCKER_NETWORK: ${COMPOSE_PROJECT_NAME}_default
     volumes:
       - ./backend/dags:/opt/airflow/dags
       - airflow-logs:/opt/airflow/logs

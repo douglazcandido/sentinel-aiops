@@ -5,8 +5,8 @@ Cada tarefa roda em um container efemero baseado na imagem sentinel-backend,
 mantendo o Airflow leve e o pipeline isolado.
 
 Fluxo:
-  ingest → dbt_silver → dbt_gold → truncate_preditivo
-        → prophet → random_forest → kmeans → recommend
+  bootstrap_schema → ingest → dbt_silver → dbt_gold → truncate_preditivo
+                  → prophet → random_forest → kmeans → recommend
 
 Execucao manual — o dataset e estatico (Jan/2023-Dez/2025).
 Interface web: http://localhost:8080 (admin / sentinel)
@@ -23,8 +23,13 @@ from docker.types import Mount
 # CONFIGURACAO
 # =========================================================
 
-# nome da imagem do backend ja buildada no host
-BACKEND_IMAGE = 'fiap-sentinel-backend'
+# nome da imagem do backend ja buildada no host e da rede docker do compose.
+# o compose nomeia ambos a partir do nome da pasta do projeto (COMPOSE_PROJECT_NAME),
+# entao ambos sao passados como env var pelo docker-compose.yml (servicos
+# airflow-webserver/airflow-scheduler) em vez de fixos aqui — travar esses nomes
+# quebra assim que o repositorio for clonado/renomeado para uma pasta diferente.
+# fallback abaixo so serve para execucao do Airflow fora do docker-compose.
+BACKEND_IMAGE = os.environ.get('BACKEND_IMAGE', 'sentinel-aiops-backend')
 
 # variaveis de ambiente passadas para cada container de tarefa
 SENTINEL_ENV = {
@@ -37,7 +42,7 @@ SENTINEL_ENV = {
 
 # rede Docker para que os containers das tarefas se comuniquem
 # com o sentinel-postgres pelo nome do servico
-DOCKER_NETWORK = 'fiap-sentinel_default'
+DOCKER_NETWORK = os.environ.get('DOCKER_NETWORK', 'sentinel-aiops_default')
 
 # caminho do dataset no host — configurado via variavel de ambiente no compose
 # fallback para o caminho padrao do ambiente de desenvolvimento
@@ -90,6 +95,11 @@ with DAG(
     catchup=False,
     tags=['sentinel', 'pipeline', 'ml', 'dbt'],
 ) as dag:
+
+    bootstrap_schema = make_task(
+        task_id='bootstrap_schema',
+        command='python -m pipeline.bootstrap',
+    )
 
     ingest = make_task(
         task_id='ingest',
@@ -147,5 +157,5 @@ with DAG(
     # DEPENDENCIAS — ordem de execucao
     # =========================================================
 
-    ingest >> dbt_silver >> dbt_gold >> truncate_preditivo
+    bootstrap_schema >> ingest >> dbt_silver >> dbt_gold >> truncate_preditivo
     truncate_preditivo >> prophet >> random_forest >> kmeans >> recommend

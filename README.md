@@ -49,7 +49,7 @@ O pipeline de dados segue arquitetura medalhão (Bronze → Silver → Gold), is
 - **Bronze** preserva o arquivo de origem sem transformação, garantindo rastreabilidade total (`pipeline/ingest.py`).
 - **Silver** aplica o modelo dimensional via modelos dbt (`backend/dbt/models/silver/`): limpeza, engenharia de features (sazonalidade, flags de OLA, campos derivados) e testes de qualidade (`not_null`, `unique`) declarados em `schema.yml`.
 - **Gold** concentra, também via dbt (`backend/dbt/models/gold/`), as agregações históricas com granularidade diária (`dim_data`, `historico_diario`, `historico_hora_diario`, `historico_grupo_diario`, `historico_violacoes_diario`) e recebe as saídas dos três modelos de ML e das recomendações, geradas por scripts Python do pipeline.
-- **Airflow** orquestra as 8 tarefas do pipeline via `DockerOperator`, cada uma rodando em um container efêmero da imagem do backend: `ingest → dbt_silver → dbt_gold → truncate_preditivo → prophet → random_forest → kmeans → recommend`.
+- **Airflow** orquestra as 9 tarefas do pipeline via `DockerOperator`, cada uma rodando em um container efêmero da imagem do backend: `bootstrap_schema → ingest → dbt_silver → dbt_gold → truncate_preditivo → prophet → random_forest → kmeans → recommend`.
 - **FastAPI** expõe os dados via rotas REST autenticadas por JWT, com um envelope de resposta padronizado.
 - **React + Vite** consome a API e renderiza os painéis do dashboard.
 
@@ -87,7 +87,7 @@ sentinel-aiops/
 │   ├── data/                 # Dataset de origem (LW-DATASET.xlsx)
 │   ├── Dockerfile
 │   ├── Dockerfile.airflow    # Imagem do Airflow com o provider Docker
-│   ├── .env.example
+│   ├── .env.example          # Vars da app Python (uso local, fora do Docker)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
@@ -106,6 +106,7 @@ sentinel-aiops/
 │   ├── sentinel-logo.png
 │   └── dicionario-dados.docx
 ├── docker-compose.yml
+├── .env.example               # SENTINEL_DATA_PATH, lido pelo docker-compose.yml
 └── README.md
 ```
 
@@ -122,15 +123,32 @@ cd sentinel-aiops
 docker compose up -d --build
 ```
 
-O Airflow usa `DockerOperator` para rodar as tarefas do pipeline, então precisa montar a pasta `backend/data/` do host nos containers efêmeros. Defina `SENTINEL_DATA_PATH` com o caminho absoluto dessa pasta (ver `backend/.env.example`) antes de subir o stack, ou o pipeline via Airflow não encontrará o dataset.
+O Airflow usa `DockerOperator` para rodar as tarefas do pipeline, então precisa montar a pasta `backend/data/` do host nos containers efêmeros. Copie o `.env.example` da raiz para `.env` e defina `SENTINEL_DATA_PATH` com o caminho absoluto dessa pasta antes de subir o stack, ou o pipeline via Airflow não encontrará o dataset. Esse `.env` da raiz é lido pelo `docker-compose.yml` (não confundir com `backend/.env`, que só a aplicação Python usa ao rodar fora do Docker).
+
+Não é preciso se preocupar com o nome da imagem/rede do backend mesmo clonando para uma pasta com nome diferente — `docker-compose.yml` deriva `BACKEND_IMAGE`/`DOCKER_NETWORK` automaticamente a partir do nome do projeto do Compose (`COMPOSE_PROJECT_NAME`, baseado no nome da pasta), e passa isso para a DAG do Airflow.
 
 Isso sobe o stack completo: PostgreSQL da aplicação (`:5432`), API FastAPI (`:8000`), frontend (`:5173`) e o stack do Airflow (postgres interno, init, webserver e scheduler, expostos em `:8080`).
 
-### 2. Popular o banco de dados
+### 2. Schema do banco e usuário de acesso — automáticos
 
-O pipeline completo (ingestão → dbt Silver → dbt Gold → treino dos modelos → recomendações) pode ser executado de duas formas:
+Não é preciso rodar nenhum script SQL nem criar usuário na mão. No startup da API (`backend/app/main.py`), o backend:
 
-**Via Airflow (recomendado)** — acesse http://localhost:8080 (usuário `admin`, senha `sentinel`), ative a DAG `sentinel_pipeline` e dispare uma execução manual. Cada uma das 8 tarefas roda em um container efêmero da imagem do backend via `DockerOperator`.
+1. Cria (se ainda não existirem) todos os schemas/tabelas/views de `backend/sql/bronze.sql`, `gold.sql` e `sql_auth.sql` (`backend/pipeline/bootstrap.py`). Tudo é idempotente — reiniciar o container não recria nem apaga nada que já existe.
+2. Se a tabela `usuarios` estiver vazia, cria automaticamente um usuário administrador padrão:
+   - **email:** `admin@sentinellocaweb.com.br`
+   - **senha:** `adminadmin`
+
+   Troque essa senha assim que possível (via área de Gestão) — são credenciais públicas, conhecidas por qualquer um que leia este repositório.
+
+O mesmo bootstrap de schema também roda como primeira etapa do pipeline (`bootstrap_schema` na DAG do Airflow, ou etapa `bootstrap` em `pipeline.run_pipeline`), então o pipeline funciona mesmo que o container do backend nunca tenha subido.
+
+`backend/sql/silver.sql` continua fora do bootstrap automático — as 5 tabelas do Silver são recriadas do zero pelos modelos dbt a cada `dbt run --select silver` (etapa `dbt:silver` do pipeline), então esse script serve só como dicionário de dados.
+
+### 3. Popular o banco de dados
+
+O pipeline completo (bootstrap de schema → ingestão → dbt Silver → dbt Gold → treino dos modelos → recomendações) pode ser executado de duas formas:
+
+**Via Airflow (recomendado)** — acesse http://localhost:8080 (usuário `admin`, senha `sentinel`), ative a DAG `sentinel_pipeline` e dispare uma execução manual. Cada uma das 9 tarefas roda em um container efêmero da imagem do backend via `DockerOperator`.
 
 **Direto, sem Airflow** — executando o mesmo fluxo dentro do container do backend:
 
@@ -138,13 +156,13 @@ O pipeline completo (ingestão → dbt Silver → dbt Gold → treino dos modelo
 docker compose exec backend python -m pipeline.run_pipeline
 ```
 
-### 3. Criar um usuário de acesso
+### 4. Criar usuários adicionais (opcional)
 
 ```bash
-docker compose exec backend python -m scripts.create_user "Seu Nome" "seu@email.com" "sua-senha"
+docker compose exec backend python -m scripts.create_user "Seu Nome" "seu@email.com" "sua-senha" [--admin]
 ```
 
-### 4. Acessar
+### 5. Acessar
 
 | Serviço | URL |
 |---|---|

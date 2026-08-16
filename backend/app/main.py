@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import auth, clusters, gestao, historico, perfil, previsao, recomendacoes, risco
 from app.core.logger import setup_logger
+from pipeline import bootstrap
+from scripts.create_user import garantir_usuario_padrao
 
 logger = setup_logger(__name__)
 
@@ -38,3 +40,5 @@ def root():
 @app.on_event('startup')
 def on_startup():
     logger.info('=== sentinel api iniciada ===')
+    bootstrap.run()
+    garantir_usuario_padrao()

@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 from app.core.logger import setup_logger
-from pipeline import ingest, recommend, train_models, truncate
+from pipeline import bootstrap, ingest, recommend, train_models, truncate
 
 logger = setup_logger(__name__)
 
@@ -30,6 +30,7 @@ def run_dbt(select: str) -> None:
 
 
 ETAPAS = [
+    ('bootstrap',           bootstrap.run),
     ('ingest',              ingest.run),
     ('dbt:silver',          lambda: run_dbt('silver')),
     ('dbt:gold',            lambda: run_dbt('gold')),

@@ -10,6 +10,37 @@ from app.models.usuario_model import Usuario
 
 logger = setup_logger(__name__)
 
+NOME_ADMIN_PADRAO = 'Admin'
+EMAIL_ADMIN_PADRAO = 'admin@sentinellocaweb.com.br'
+SENHA_ADMIN_PADRAO = 'adminadmin'
+
+
+def garantir_usuario_padrao() -> None:
+    '''Cria o usuario admin padrao automaticamente se a base de usuarios estiver
+    vazia. Chamado no startup da API (app/main.py) para bootstrap automatico do
+    container — sem isso, uma base nova fica sem nenhum jeito de logar sem rodar
+    scripts.create_user manualmente. So dispara com a tabela 100% vazia (nao apenas
+    se o email padrao ainda nao existir), para nao recriar o usuario padrao ao lado
+    de usuarios reais ja cadastrados.
+    '''
+    engine = create_engine(DATABASE_URL)
+
+    with Session(engine) as session:
+        se_ja_tem_usuario = session.query(Usuario).count() > 0
+
+    engine.dispose()
+
+    if se_ja_tem_usuario:
+        return
+
+    criar_usuario(NOME_ADMIN_PADRAO, EMAIL_ADMIN_PADRAO, SENHA_ADMIN_PADRAO, is_admin=True)
+    logger.warning(
+        'usuario admin padrao criado automaticamente (email=%s, senha=%s) — '
+        'troque a senha assim que possivel',
+        EMAIL_ADMIN_PADRAO, SENHA_ADMIN_PADRAO,
+    )
+
+
 def criar_usuario(nome: str, email: str, senha: str, is_admin: bool = False) -> None:
     engine = create_engine(DATABASE_URL)
 

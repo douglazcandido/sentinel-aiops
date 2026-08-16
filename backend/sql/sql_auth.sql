@@ -3,11 +3,12 @@
 -- Precisa refletir exatamente os modelos ORM em backend/app/models/usuario_model.py:
 -- Usuario, Cargo, TipoFoto. Qualquer coluna/tabela ausente aqui quebra o SELECT * do
 -- SQLAlchemy (inclusive o login em app/api/v1/auth.py, que consulta Usuario por completo).
-
-DROP VIEW IF EXISTS public.vw_usuarios;
-DROP TABLE IF EXISTS public.usuarios CASCADE;
-DROP TABLE IF EXISTS public.cargos CASCADE;
-DROP TABLE IF EXISTS public.tipos_foto CASCADE;
+--
+-- IMPORTANTE: este script roda automaticamente a cada start do backend
+-- (backend/pipeline/bootstrap.py, chamado no startup da API) e a cada execucao do
+-- pipeline. Por isso NAO pode conter DROP TABLE/VIEW incondicional — isso apagaria
+-- usuarios reais a cada restart do container. Todo comando aqui precisa ser
+-- idempotente (IF NOT EXISTS / CREATE OR REPLACE / ON CONFLICT DO NOTHING).
 
 -- ---------------------------------------------------------
 -- CARGOS
@@ -53,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_email ON public.usuarios (email);
 -- VW_USUARIOS
 -- Consumida por gestao_service.listar_usuarios (SELECT direto via texto SQL)
 -- ---------------------------------------------------------
-CREATE VIEW public.vw_usuarios AS
+CREATE OR REPLACE VIEW public.vw_usuarios AS
 SELECT
     u.id,
     u.nome,
