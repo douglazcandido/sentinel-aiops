@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from "react"
 import { useNavigate, useLocation, Navigate } from "react-router-dom"
-import { Loader2, AlertCircle, Mail, Lock } from "lucide-react"
+import { Loader2, AlertCircle, Mail, Lock, Moon, Sun } from "lucide-react"
 import { useAuth } from "@/lib/auth"
 import { useTema } from "@/lib/tema"
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth()
-  const { tema } = useTema()
+  const { tema, alternarTema } = useTema()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState("")
@@ -35,7 +35,16 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--color-background)] p-6">
+    <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] p-6">
+      <button
+        type="button"
+        onClick={alternarTema}
+        title={tema === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
+        className="absolute right-6 top-6 flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-foreground)]"
+      >
+        {tema === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+      </button>
+
       {/* Outer block with continuous running glow border */}
       <div className="login-card-ring w-full max-w-5xl animate-enter">
         <div className="flex min-h-[680px] overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
