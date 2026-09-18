@@ -41,39 +41,39 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  /* Superfícies */
-  --color-background: #f0f2f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #f8f9fb;
-  --color-surface-3: #eef0f3;
+  /* Superfícies — tons suaves e próximos entre si, sem branco puro, para reduzir claridade e contraste abrupto */
+  --color-background: #c7ccd4;
+  --color-surface: #d5dade;
+  --color-surface-2: #ccd2d8;
+  --color-surface-3: #c3c9d0;
 
-  /* Texto */
-  --color-foreground: #0f1923;
-  --color-muted: #4a5568;
-  --color-muted-2: #8896a5;
+  /* Texto — mais escuro/contrastado sobre as superfícies suaves */
+  --color-foreground: #0d131a;
+  --color-muted: #3f4a56;
+  --color-muted-2: #626d7a;
 
   /* Bordas */
-  --color-border: #dde1e7;
-  --color-border-strong: #c8cdd6;
+  --color-border: #b4bbc4;
+  --color-border-strong: #949dab;
 
-  /* Accent — ciano ligeiramente mais escuro para contraste em fundo claro */
-  --color-accent: #0891b2;
-  --color-accent-2: #0369a1;
-  --color-accent-soft: rgba(8, 145, 178, 0.12);
-  --color-glow-blue: #0891b2;
+  /* Accent — ciano mais escuro para contraste e menos brilho em fundo claro */
+  --color-accent: #0e7490;
+  --color-accent-2: #075985;
+  --color-accent-soft: rgba(14, 116, 144, 0.14);
+  --color-glow-blue: #0e7490;
 
   /* Semânticas — ajustadas para contraste em fundo claro */
-  --color-risk-high: #e11d48;
-  --color-risk-high-soft: rgba(225, 29, 72, 0.12);
-  --color-risk-med: #d97706;
-  --color-risk-med-soft: rgba(217, 119, 6, 0.12);
-  --color-risk-low: #059669;
-  --color-risk-low-soft: rgba(5, 150, 105, 0.12);
+  --color-risk-high: #be123c;
+  --color-risk-high-soft: rgba(190, 18, 60, 0.12);
+  --color-risk-med: #b45309;
+  --color-risk-med-soft: rgba(180, 83, 9, 0.12);
+  --color-risk-low: #047857;
+  --color-risk-low-soft: rgba(4, 120, 87, 0.12);
 
-  --color-topbar: #ffffff;
-  --color-skeleton-sheen: #ffffff;
+  --color-topbar: #d5dade;
+  --color-skeleton-sheen: #dfe4e8;
   --color-accent-contrast: #ffffff;
-  --glow-opacity: 0.55;
+  --glow-opacity: 0.16;
 }
 @layer base {
   * {
