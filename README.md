@@ -179,7 +179,8 @@ docker compose exec backend python -m scripts.create_user "Seu Nome" "seu@email.
 
 ## Documentação
 
-- [Dicionário de dados do dataset](docs/dicionario-dados.docx)
+- [Dicionário de dados do dataset de origem](docs/dicionario-dados-locaweb.docx) (colunas de negócio do XLSX fornecido pela Locaweb, camada Bronze)
+- [Dicionário de dados do banco](docs/dicionario-dados-sentinel.docx) (Silver, Gold e autenticação, com base no schema real do PostgreSQL)
 - [Diagrama de arquitetura](docs/architecture.svg)
 - [Notebook de análise exploratória (EDA)](backend/notebooks/exploracao_dataset_locaweb.ipynb)
 
