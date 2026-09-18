@@ -40,7 +40,7 @@ export function CardHeader({
   action?: ReactNode
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-4">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="flex items-center gap-2.5">
         {icon && (
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-accent-soft)] text-[var(--color-accent)]">

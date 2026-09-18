@@ -85,7 +85,7 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col gap-5 p-5">
         {/* Welcome card */}
-        <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-4 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.4)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-4 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.4)] sm:px-5">
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 shrink-0">
               <div

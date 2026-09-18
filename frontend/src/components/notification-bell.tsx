@@ -77,7 +77,7 @@ export function NotificationCenter() {
         </button>
 
         {open && (
-          <div className="absolute right-0 top-11 z-50 w-72 animate-fade rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)]">
+          <div className="absolute right-0 top-11 z-50 w-72 max-w-[calc(100vw-1.5rem)] animate-fade rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)]">
             <div className="border-b border-[var(--color-border)] px-4 py-3">
               <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
                 Central de notificações

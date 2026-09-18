@@ -44,7 +44,7 @@ export default function PadroesPage() {
           <ErrorState message={error} onRetry={reload} />
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-[var(--color-muted)]">
                 {loading ? "Carregando padrões..." : `${ordenados.length} clusters identificados`}
               </p>

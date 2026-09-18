@@ -35,19 +35,19 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] p-6">
+    <main className="relative flex min-h-screen items-center justify-center bg-[var(--color-background)] p-4 sm:p-6">
       <button
         type="button"
         onClick={alternarTema}
         title={tema === "dark" ? "Mudar para tema claro" : "Mudar para tema escuro"}
-        className="absolute right-6 top-6 flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-foreground)]"
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-foreground)] sm:right-6 sm:top-6"
       >
         {tema === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
       </button>
 
       {/* Outer block with continuous running glow border */}
       <div className="login-card-ring w-full max-w-5xl animate-enter">
-        <div className="flex min-h-[680px] overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="flex min-h-0 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] sm:rounded-3xl lg:min-h-[680px]">
           {/* Left column — hero image */}
           <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden rounded-l-3xl">
             <img
@@ -58,14 +58,14 @@ export default function LoginPage() {
           </div>
 
           {/* Right column — form */}
-          <div className="flex w-full lg:w-1/2 items-center justify-center px-8 py-12">
+          <div className="flex w-full lg:w-1/2 items-center justify-center px-6 py-10 sm:px-8 sm:py-12">
             <div className="w-full max-w-sm">
               {/* Logo + heading */}
-              <div className="mb-10 flex flex-col items-center text-center">
+              <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
                 <img
                   src={tema === "light" ? "/logo-sentinel-light.svg" : "/logo-sentinel.svg"}
                   alt="Sentinel"
-                  className="h-40 w-auto"
+                  className="h-28 w-auto sm:h-40"
                 />
                 <p className="mt-4 text-sm text-[var(--color-muted)]">
                   Analytics Preditivo de Incidentes de TI

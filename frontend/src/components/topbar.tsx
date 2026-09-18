@@ -17,15 +17,15 @@ interface TopbarProps {
 
 export function Topbar({ title, subtitle, label, value, onRefresh, refreshing, actions }: TopbarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-background)]/85 px-6 backdrop-blur-md">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight text-[var(--color-foreground)]">
+    <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-[var(--color-border)] bg-[var(--color-background)]/85 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-0 sm:min-h-16">
+      <div className="min-w-0">
+        <h1 className="truncate text-base font-semibold tracking-tight text-[var(--color-foreground)] sm:text-lg">
           {title}
         </h1>
         {subtitle && <p className="text-xs text-[var(--color-muted)]">{subtitle}</p>}
       </div>
       {(actions || value) && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {actions}
           {value && (
             <button

@@ -35,24 +35,45 @@ interface SidebarProps {
   pinned: boolean
   onHoverChange: (v: boolean) => void
   onPinnedChange: (v: boolean) => void
+  mobileOpen: boolean
+  onMobileOpenChange: (v: boolean) => void
 }
 
-export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: SidebarProps) {
+export function Sidebar({
+  expanded,
+  pinned,
+  onHoverChange,
+  onPinnedChange,
+  mobileOpen,
+  onMobileOpenChange,
+}: SidebarProps) {
   const { logout, isAdmin } = useAuth()
   useLocation()
 
   const navItems = isAdmin ? [...NAV_ITEMS, GESTAO_ITEM] : NAV_ITEMS
+  const showExpanded = expanded || mobileOpen
 
   return (
-    <aside
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
-      className={cn(
-        'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] pt-16',
-        'transition-[width] duration-200 ease-out',
-      )}
-      style={{ width: expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W }}
-    >
+    <>
+      {/* Mobile backdrop */}
+      <div
+        aria-hidden
+        onClick={() => onMobileOpenChange(false)}
+        className={cn(
+          'fixed inset-0 z-30 bg-black/60 backdrop-blur-sm transition-opacity duration-200 md:hidden',
+          mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+      <aside
+        onMouseEnter={() => onHoverChange(true)}
+        onMouseLeave={() => onHoverChange(false)}
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] pt-16',
+          'transition-transform duration-200 ease-out md:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
+        style={{ width: showExpanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W }}
+      >
       {/* Nav */}
       <nav className="mt-8 flex flex-1 flex-col gap-1 px-3">
         {navItems.map(({ to, label, icon: Icon, end }) => (
@@ -60,6 +81,7 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
             key={to}
             to={to}
             end={end}
+            onClick={() => onMobileOpenChange(false)}
             className={({ isActive }) =>
               cn(
                 'relative flex h-10 items-center gap-3 overflow-hidden rounded-lg px-[10px] text-sm transition-colors',
@@ -78,7 +100,7 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
                 <span
                   className={cn(
                     'whitespace-nowrap transition-opacity duration-200',
-                    expanded ? 'opacity-100' : 'opacity-0',
+                    showExpanded ? 'opacity-100' : 'opacity-0',
                   )}
                 >
                   {label}
@@ -91,8 +113,8 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
 
       {/* Footer: pin + user + logout */}
       <div className="border-t border-[var(--color-border)] p-3">
-        {/* Pin button */}
-        <div className="flex items-center gap-3 overflow-hidden rounded-lg px-1 py-1.5">
+        {/* Pin button (desktop only — the mobile drawer opens/closes via the header toggle) */}
+        <div className="hidden items-center gap-3 overflow-hidden rounded-lg px-1 py-1.5 md:flex">
           <button
             onClick={() => onPinnedChange(!pinned)}
             title={pinned ? 'Desafixar sidebar' : 'Fixar sidebar aberta'}
@@ -108,7 +130,7 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
           <span
             className={cn(
               'whitespace-nowrap text-xs text-[var(--color-muted)] transition-opacity duration-200',
-              expanded ? 'opacity-100' : 'opacity-0',
+              showExpanded ? 'opacity-100' : 'opacity-0',
             )}
           >
             {pinned ? 'Fixado' : 'Fixar menu'}
@@ -125,13 +147,14 @@ export function Sidebar({ expanded, pinned, onHoverChange, onPinnedChange }: Sid
           <span
             className={cn(
               'whitespace-nowrap transition-opacity duration-200',
-              expanded ? 'opacity-100' : 'opacity-0',
+              showExpanded ? 'opacity-100' : 'opacity-0',
             )}
           >
             Logout
           </span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
