@@ -1,9 +1,11 @@
 # Sentinel
 
+*Predicting IT Operations, Before It Happens.*
+
 Analytics preditivo de incidentes de TI, desenvolvido para o desafio **AIOps** proposto pela Locaweb em parceria com a FIAP (Challenge 2026, curso de Data Science).
 
 <p align="center">
-  <img src="docs/sentinel-logo.png" alt="Sentinel — predicting IT operations, before it happens" width="320">
+  <img src="docs/sentinel-logo.png" alt="Sentinel: predicting IT operations, before it happens" width="320">
 </p>
 
 <p align="center">
@@ -20,16 +22,19 @@ Analytics preditivo de incidentes de TI, desenvolvido para o desafio **AIOps** p
 
 ## O problema
 
-A Locaweb opera uma infraestrutura de TI 24x7 onde a disponibilidade dos serviços é um fator crítico de negócio. Incidentes operacionais são registrados continuamente, classificados por prioridade, categoria, equipe responsável e tempo de resolução — e cada um desses incidentes impacta diretamente os acordos de nível operacional (OLA).
+A Locaweb opera uma infraestrutura de TI 24x7 onde a disponibilidade dos serviços é um fator crítico de negócio. Incidentes operacionais são registrados continuamente, classificados por prioridade, categoria, equipe responsável e tempo de resolução, e cada um desses incidentes impacta diretamente os acordos de nível operacional (OLA).
 
 O desafio proposto pela Locaweb foi transformar esse histórico operacional em inteligência preditiva: antecipar picos de incidentes antes que aconteçam, identificar onde o risco de violação de OLA está concentrado, e gerar recomendações práticas para a operação.
 
+A análise exploratória do dataset (122.543 incidentes, de Jan/2023 a Dez/2025) evidencia as três camadas do problema: **85,1%** dos incidentes são abertos automaticamente pelo monitoramento e **65,6%** se fecham sem qualquer intervenção humana, um claro sinal de *alert fatigue*; a operação é inteiramente reativa, sem visibilidade sobre o volume esperado nos próximos dias; e há concentração de risco por equipe e horário (ex: pico recorrente às quartas-feiras, entre 9h e 11h e às 15h) que passa despercebida sem uma análise estruturada. No período analisado, **248 incidentes** violaram o OLA dentro do KPI monitorado (42 em P2-Alta, 75% da meta estipulada).
+
 ## A solução
 
-O Sentinel é um MVP completo, de ponta a ponta: pipeline de dados, três modelos de machine learning, API REST autenticada e um painel web para consumo executivo. Não é um notebook de análise — é uma aplicação funcional, containerizada, pronta para ser apresentada e operada.
+O Sentinel é um MVP completo, de ponta a ponta: pipeline de dados, três modelos de machine learning, API REST autenticada e um painel web para consumo executivo. Não é um notebook de análise: é uma aplicação funcional, containerizada, pronta para ser apresentada e operada.
 
 | Frente analítica | Técnica | O que responde |
 |---|---|---|
+| Dashboard | Agregações Gold + saídas dos modelos | Visão executiva do estado atual da operação: KPIs principais e os destaques de maior prioridade (cluster de maior risco, meta OLA mais crítica, recomendação em destaque) |
 | Histórico | Agregações dbt (granularidade diária) | Como o volume de incidentes se comporta por hora, dia e equipe, filtrável por período |
 | Previsão | NeuralProphet | Quantos incidentes esperar amanhã (D+1) e na próxima semana (D+7) |
 | Risco de OLA | Random Forest + Explicabilidade | Qual a probabilidade de violação, quais variáveis mais influenciam o modelo e como as violações evoluem no tempo |
@@ -57,8 +62,8 @@ O pipeline de dados segue arquitetura medalhão (Bronze → Silver → Gold), is
 
 **Pipeline e backend**
 - Python 3.12, pandas, scikit-learn, NeuralProphet
-- dbt-core + dbt-postgres — modelagem e testes das camadas Silver e Gold
-- Apache Airflow 2.9 (`LocalExecutor` + `DockerOperator`) — orquestração do pipeline completo
+- dbt-core + dbt-postgres: modelagem e testes das camadas Silver e Gold
+- Apache Airflow 2.9 (`LocalExecutor` + `DockerOperator`): orquestração do pipeline completo
 - PostgreSQL 17 com schemas separados (`bronze`, `silver`, `gold`, `public`)
 - FastAPI + SQLAlchemy 2.0, autenticação JWT (`python-jose` + `passlib`)
 
@@ -85,6 +90,8 @@ sentinel-aiops/
 │   ├── scripts/              # Utilitários (ex: criação de usuário)
 │   ├── sql/                  # Scripts DDL (schemas Bronze, Silver, Gold, autenticação)
 │   ├── data/                 # Dataset de origem (LW-DATASET.xlsx)
+│   ├── notebooks/            # EDA exploratória (exploracao_dataset_locaweb.ipynb), que orientou
+│   │                         #   as features implementadas na camada Silver
 │   ├── Dockerfile
 │   ├── Dockerfile.airflow    # Imagem do Airflow com o provider Docker
 │   ├── .env.example          # Vars da app Python (uso local, fora do Docker)
@@ -93,8 +100,8 @@ sentinel-aiops/
 │   ├── src/
 │   │   ├── components/       # UI compartilhada (sidebar, cards, gráficos, modais de gestão)
 │   │   ├── lib/               # Cliente HTTP, autenticação, hooks de dados
-│   │   ├── pages/              # Painéis do dashboard (histórico, previsão, risco, padrões,
-│   │   │                       #   recomendações, exportação, gestão) + login
+│   │   ├── pages/              # Painéis do dashboard (visão executiva, histórico, previsão,
+│   │   │                       #   risco, padrões, recomendações, exportação, gestão) + login
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── Dockerfile
@@ -125,32 +132,32 @@ docker compose up -d --build
 
 O Airflow usa `DockerOperator` para rodar as tarefas do pipeline, então precisa montar a pasta `backend/data/` do host nos containers efêmeros. Copie o `.env.example` da raiz para `.env` e defina `SENTINEL_DATA_PATH` com o caminho absoluto dessa pasta antes de subir o stack, ou o pipeline via Airflow não encontrará o dataset. Esse `.env` da raiz é lido pelo `docker-compose.yml` (não confundir com `backend/.env`, que só a aplicação Python usa ao rodar fora do Docker).
 
-Não é preciso se preocupar com o nome da imagem/rede do backend mesmo clonando para uma pasta com nome diferente — `docker-compose.yml` deriva `BACKEND_IMAGE`/`DOCKER_NETWORK` automaticamente a partir do nome do projeto do Compose (`COMPOSE_PROJECT_NAME`, baseado no nome da pasta), e passa isso para a DAG do Airflow.
+Não é preciso se preocupar com o nome da imagem/rede do backend mesmo clonando para uma pasta com nome diferente: `docker-compose.yml` deriva `BACKEND_IMAGE`/`DOCKER_NETWORK` automaticamente a partir do nome do projeto do Compose (`COMPOSE_PROJECT_NAME`, baseado no nome da pasta), e passa isso para a DAG do Airflow.
 
 Isso sobe o stack completo: PostgreSQL da aplicação (`:5432`), API FastAPI (`:8000`), frontend (`:5173`) e o stack do Airflow (postgres interno, init, webserver e scheduler, expostos em `:8080`).
 
-### 2. Schema do banco e usuário de acesso — automáticos
+### 2. Schema do banco e usuário de acesso (automáticos)
 
 Não é preciso rodar nenhum script SQL nem criar usuário na mão. No startup da API (`backend/app/main.py`), o backend:
 
-1. Cria (se ainda não existirem) todos os schemas/tabelas/views de `backend/sql/bronze.sql`, `gold.sql` e `sql_auth.sql` (`backend/pipeline/bootstrap.py`). Tudo é idempotente — reiniciar o container não recria nem apaga nada que já existe.
+1. Cria (se ainda não existirem) todos os schemas/tabelas/views de `backend/sql/bronze.sql`, `gold.sql` e `sql_auth.sql` (`backend/pipeline/bootstrap.py`). Tudo é idempotente: reiniciar o container não recria nem apaga nada que já existe.
 2. Se a tabela `usuarios` estiver vazia, cria automaticamente um usuário administrador padrão:
    - **email:** `admin@sentinellocaweb.com.br`
    - **senha:** `adminadmin`
 
-   Troque essa senha assim que possível (via área de Gestão) — são credenciais públicas, conhecidas por qualquer um que leia este repositório.
+   Troque essa senha assim que possível (via área de Gestão): são credenciais públicas, conhecidas por qualquer um que leia este repositório.
 
 O mesmo bootstrap de schema também roda como primeira etapa do pipeline (`bootstrap_schema` na DAG do Airflow, ou etapa `bootstrap` em `pipeline.run_pipeline`), então o pipeline funciona mesmo que o container do backend nunca tenha subido.
 
-`backend/sql/silver.sql` continua fora do bootstrap automático — as 5 tabelas do Silver são recriadas do zero pelos modelos dbt a cada `dbt run --select silver` (etapa `dbt:silver` do pipeline), então esse script serve só como dicionário de dados.
+`backend/sql/silver.sql` continua fora do bootstrap automático: as 5 tabelas do Silver são recriadas do zero pelos modelos dbt a cada `dbt run --select silver` (etapa `dbt:silver` do pipeline), então esse script serve só como dicionário de dados.
 
 ### 3. Popular o banco de dados
 
 O pipeline completo (bootstrap de schema → ingestão → dbt Silver → dbt Gold → treino dos modelos → recomendações) pode ser executado de duas formas:
 
-**Via Airflow (recomendado)** — acesse http://localhost:8080 (usuário `admin`, senha `sentinel`), ative a DAG `sentinel_pipeline` e dispare uma execução manual. Cada uma das 9 tarefas roda em um container efêmero da imagem do backend via `DockerOperator`.
+**Via Airflow (recomendado)**: acesse http://localhost:8080 (usuário `admin`, senha `sentinel`), ative a DAG `sentinel_pipeline` e dispare uma execução manual. Cada uma das 9 tarefas roda em um container efêmero da imagem do backend via `DockerOperator`.
 
-**Direto, sem Airflow** — executando o mesmo fluxo dentro do container do backend:
+**Direto, sem Airflow**: executando o mesmo fluxo dentro do container do backend:
 
 ```bash
 docker compose exec backend python -m pipeline.run_pipeline
@@ -174,19 +181,26 @@ docker compose exec backend python -m scripts.create_user "Seu Nome" "seu@email.
 
 - [Dicionário de dados do dataset](docs/dicionario-dados.docx)
 - [Diagrama de arquitetura](docs/architecture.svg)
+- [Notebook de análise exploratória (EDA)](backend/notebooks/exploracao_dataset_locaweb.ipynb)
 
 ## Decisões técnicas relevantes
 
 Algumas decisões de modelagem valem registro, já que refletem limitações reais do dataset, não falhas de implementação:
 
-- **P1-Crítica tem apenas 1 registro** na base de 122 mil incidentes. O desafio exige análise obrigatória de P2 e P3, que é onde o volume e a relevância de OLA realmente se concentram — P1 foi tratada como exceção estatística, não como erro.
-- **O Random Forest tem recall baixo para a classe "Violado"**, mesmo com balanceamento de classes. O desbalanceamento é extremo (188 violações para quase 20 mil casos não violados no conjunto de treino) — é uma limitação estrutural dos dados, documentada e aceita como tal no MVP.
-- **Métricas de atingimento de meta acima de 100%** (ex: 150%) indicam superação da meta, não violação dela — o cálculo usa faixas de excelência onde menos violações geram percentual maior, inspirado em sistemas de bônus corporativos.
-- **Explicabilidade do Random Forest**: a variável "Duração (s)" responde por 76,5% da importância do modelo — incidentes que já acumulam tempo elevado têm probabilidade significativamente maior de violar o OLA. As demais variáveis relevantes são hora de abertura (5,9%), mês (5,3%) e prioridade (4,2%).
+- **P1-Crítica tem apenas 1 registro** na base de 122 mil incidentes. O desafio exige análise obrigatória de P2 e P3, que é onde o volume e a relevância de OLA realmente se concentram, P1 foi tratada como exceção estatística, não como erro.
+- **O Random Forest tem recall baixo para a classe "Violado"**, mesmo com balanceamento de classes. O desbalanceamento é extremo (188 violações para quase 20 mil casos não violados no conjunto de treino), uma limitação estrutural dos dados, documentada e aceita como tal no MVP.
+- **Métricas de atingimento de meta acima de 100%** (ex: 150%) indicam superação da meta, não violação dela: o cálculo usa faixas de excelência onde menos violações geram percentual maior, inspirado em sistemas de bônus corporativos.
+- **Explicabilidade do Random Forest**: a variável "Duração (s)" responde por 76,5% da importância do modelo. Incidentes que já acumulam tempo elevado têm probabilidade significativamente maior de violar o OLA. As demais variáveis relevantes são hora de abertura (5,9%), mês (5,3%) e prioridade (4,2%).
 
 ## Equipe
 
 Projeto desenvolvido para o Challenge FIAP × Locaweb 2026 - Grupo Datateston | 2TSCOA.
+
+- Douglas da Silva Candido
+- Elias Antonio da Silva
+- Guilherme Prado Farroco (Representante do Grupo)
+- Guilherme Santos Souza
+- Marcus Vinicius Pionte Kosky
 
 ---
 
