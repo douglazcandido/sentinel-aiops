@@ -25,10 +25,18 @@ export function useTema() {
 
   function alternarTema() {
     const novo: Tema = tema === "dark" ? "light" : "dark"
-    document.documentElement.setAttribute("data-theme", novo)
-    localStorage.setItem(STORAGE_KEY, novo)
-    setTema(novo)
-    window.dispatchEvent(new Event(EVENTO_TEMA))
+    const aplicar = () => {
+      document.documentElement.setAttribute("data-theme", novo)
+      localStorage.setItem(STORAGE_KEY, novo)
+      setTema(novo)
+      window.dispatchEvent(new Event(EVENTO_TEMA))
+    }
+
+    if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.startViewTransition(aplicar)
+    } else {
+      aplicar()
+    }
   }
 
   return { tema, alternarTema }

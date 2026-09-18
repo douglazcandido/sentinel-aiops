@@ -121,6 +121,25 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted-2);
 }
+/* Transição de tema claro/escuro */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: ease-in-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Fallback para navegadores sem View Transitions API (ex.: Firefox) */
+  body,
+  header,
+  aside,
+  nav,
+  main {
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease;
+  }
+}
 /* Animations */
 @keyframes fade-slide-up {
   from {
