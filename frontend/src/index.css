@@ -182,3 +182,50 @@
 .animate-spin-slow {
   animation: spin 0.8s linear infinite;
 }
+/* Glow contínuo "correndo" em volta do card de login */
+@property --login-ring-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes login-ring-spin {
+  to {
+    --login-ring-angle: 360deg;
+  }
+}
+.login-card-ring {
+  position: relative;
+  padding: 1px;
+  border-radius: 1.5rem;
+}
+.login-card-ring::before,
+.login-card-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--login-ring-angle),
+    transparent 0deg,
+    transparent 270deg,
+    var(--color-glow-blue) 315deg,
+    var(--color-accent) 335deg,
+    transparent 360deg
+  );
+  animation: login-ring-spin 6s linear infinite;
+}
+.login-card-ring::before {
+  z-index: -1;
+}
+.login-card-ring::after {
+  z-index: -2;
+  inset: -18px;
+  filter: blur(22px);
+  opacity: var(--glow-opacity);
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-card-ring::before,
+  .login-card-ring::after {
+    animation: none;
+  }
+}
