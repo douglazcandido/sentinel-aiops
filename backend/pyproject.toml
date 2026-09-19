@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+# 140 evita reformatar linhas de negocio existentes so por causa do limite;
+# reavaliar para 120 (padrao) em um PR dedicado de formatacao.
+line-length = 140
+target-version = "py312"
+
+[tool.ruff.lint]
+# "I" (import sorting) fica de fora por enquanto: aplicar agora reformataria
+# quase todo arquivo existente. Reavaliar depois de um PR dedicado de formatacao.
+select = ["E", "F"]

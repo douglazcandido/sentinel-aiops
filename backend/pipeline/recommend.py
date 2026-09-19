@@ -9,7 +9,6 @@ from app.models.gold_models import (
     DimGrupo,
     HistoricoGrupoDiario,
     Recomendacao,
-    RiscoOlaKpi,
 )
 
 logger = setup_logger(__name__)

@@ -156,7 +156,7 @@ def atualizar_cargo(db: Session, cargo_id: int, dados: AtualizarCargoRequest) ->
         if not dados.ativo:
             vinculados = (
                 db.query(Usuario)
-                .filter(Usuario.cargo_id == cargo_id, Usuario.ativo == True)
+                .filter(Usuario.cargo_id == cargo_id, Usuario.ativo)
                 .count()
             )
             if vinculados > 0:
