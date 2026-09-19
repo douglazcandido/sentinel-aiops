@@ -27,7 +27,7 @@ def get_current_user(
     if email is None:
         raise credenciais_invalidas
 
-    usuario = db.query(Usuario).filter(Usuario.email == email, Usuario.ativo == True).first()
+    usuario = db.query(Usuario).filter(Usuario.email == email, Usuario.ativo).first()
     if usuario is None:
         logger.warning('usuario nao encontrado ou inativo: %s', email)
         raise credenciais_invalidas

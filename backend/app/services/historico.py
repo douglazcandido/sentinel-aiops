@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import func, text
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.gold_models import (
