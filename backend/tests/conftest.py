@@ -1,11 +1,12 @@
-'''Fixtures dos testes de integracao da API.
+'''Fixtures compartilhadas pelos testes de integracao (tests/api e tests/data_pipeline).
 
-Sobem a aplicacao FastAPI real (incluindo o evento de startup: bootstrap do
-schema em app/pipeline/bootstrap.py e criacao do usuario admin padrao) contra
-um Postgres de verdade, apontado pelas variaveis de ambiente POSTGRES_* (as
+Sobem a aplicacao FastAPI real (incluindo o lifespan de startup: bootstrap do
+schema em pipeline/bootstrap.py e criacao do usuario admin padrao) contra um
+Postgres de verdade, apontado pelas variaveis de ambiente POSTGRES_* (as
 mesmas usadas em producao, ver app/core/config.py).
 
-Requer um banco DESCARTAVEL: os testes escrevem na tabela public.usuarios.
+Requer um banco DESCARTAVEL: os testes escrevem em public.usuarios e (no caso
+de tests/data_pipeline) esperam os schemas bronze/silver/gold ja carregados.
 No CI isso e um servico Postgres efemero (ver .github/workflows/backend-ci.yml).
 Para rodar localmente, aponte POSTGRES_HOST/PORT/USER/PASSWORD/DB para uma
 instancia de teste, nunca para o Postgres de desenvolvimento do docker-compose.

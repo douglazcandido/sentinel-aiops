@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,10 +10,20 @@ from scripts.create_user import garantir_usuario_padrao
 
 logger = setup_logger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info('=== sentinel api iniciada ===')
+    bootstrap.run()
+    garantir_usuario_padrao()
+    yield
+
+
 app = FastAPI(
     title='Sentinel API',
     description='API de analytics preditivo para incidentes de TI da Locaweb',
     version='1.0.0',
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -36,9 +48,3 @@ app.include_router(gestao.cargos_router, prefix='/api/v1')
 def root():
     logger.info('requisicao recebida: GET /')
     return {'sucesso': True, 'mensagem': 'Sentinel API esta no ar'}
-
-@app.on_event('startup')
-def on_startup():
-    logger.info('=== sentinel api iniciada ===')
-    bootstrap.run()
-    garantir_usuario_padrao()
