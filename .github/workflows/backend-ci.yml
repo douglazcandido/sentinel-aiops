@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI/CD
 
 on:
   push:
@@ -86,8 +86,8 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements-dev.txt
 
-      - name: Rodar testes de integracao (API + Postgres real)
-        run: pytest tests/api --cov=app --cov-report=term-missing
+      - name: Rodar testes de integracao (API + servicos + Postgres real)
+        run: pytest tests/api tests/services --cov=app --cov-report=term-missing
 
   data-pipeline-test:
     runs-on: ubuntu-latest
@@ -136,5 +136,37 @@ jobs:
       - name: dbt run (gold)
         run: dbt run --profiles-dir dbt --project-dir dbt --select gold --threads 1
 
+      - name: dbt test (silver + gold)
+        run: dbt test --profiles-dir dbt --project-dir dbt --select silver gold --threads 1
+
       - name: Rodar testes sobre dados reais do pipeline (sem etapa de ML)
         run: pytest tests/data_pipeline --cov=app --cov-report=term-missing
+
+  build-and-push:
+    # so builda/publica a imagem depois que todo o CI passar, e so em push
+    # direto na main (nunca em pull_request, nem de forks)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint, unit-test, integration-test, data-pipeline-test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e push da imagem do backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/sentinel-backend:latest
+            ghcr.io/${{ github.repository_owner }}/sentinel-backend:${{ github.sha }}
