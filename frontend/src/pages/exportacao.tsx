@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
-import { Download, FileText, Table, CheckSquare, Square, Loader2 } from 'lucide-react'
+import { Download, FileText, CheckSquare, Square, Loader2 } from 'lucide-react'
 import { Topbar } from '@/components/topbar'
 import { Card, CardHeader } from '@/components/card'
 import { useHistorico } from '@/lib/hooks'
@@ -103,7 +103,11 @@ export default function ExportacaoPage() {
   function toggleDataset(key: DatasetKey) {
     setSelecionados((prev) => {
       const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
       return next
     })
   }
@@ -162,7 +166,6 @@ export default function ExportacaoPage() {
     setExportando(true)
     setTimeout(() => {
       selecionados.forEach((key) => {
-        const config = DATASETS.find((d) => d.key === key)!
         const rows = buildRows(key)
         if (rows.length) exportCSV(rows, `sentinel_${key}`)
       })
@@ -242,7 +245,6 @@ export default function ExportacaoPage() {
           const datasets = DATASETS.filter((d) => d.frente === frente)
           const keys = datasets.map((d) => d.key)
           const todosFrente = keys.every((k) => selecionados.has(k))
-          const algumaFrente = keys.some((k) => selecionados.has(k))
 
           return (
             <Card key={frente} index={fi + 1}>

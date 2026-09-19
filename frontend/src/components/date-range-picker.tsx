@@ -80,7 +80,6 @@ function computeLabel(value: DateRange): string {
 function buildGrid(y: number, m: number): { iso: string; day: number; inMonth: boolean }[] {
   const firstOfMonth = new Date(Date.UTC(y, m - 1, 1))
   const startDow = (firstOfMonth.getUTCDay() + 6) % 7
-  const start = new Date(Date.UTC(y, m - 1, 1 - startDow))
   const cells: { iso: string; day: number; inMonth: boolean }[] = []
   for (let i = 0; i < 42; i++) {
     const d = new Date(Date.UTC(y, m - 1, 1 - startDow + i))

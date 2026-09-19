@@ -54,7 +54,6 @@ function useApiData<T>(path: string, params?: Record<string, unknown>): AsyncSta
     return () => {
       active = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, paramsKey, nonce])
 
   const reload = useCallback(() => setNonce((n) => n + 1), [])

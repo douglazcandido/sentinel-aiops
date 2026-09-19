@@ -59,7 +59,6 @@ export function NotificationToast({ total, onClose, onVerRecomendacoes }: Notifi
 
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused])
 
   const handleVerClick = () => {

@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(usuario)
       setAvatarVersion((v) => v + 1)
     } catch (err) {
-      throw new Error(getErrorMessage(err))
+      throw new Error(getErrorMessage(err), { cause: err })
     }
   }, [])
 

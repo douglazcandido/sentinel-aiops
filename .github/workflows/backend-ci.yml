@@ -20,9 +20,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -37,9 +37,9 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -49,7 +49,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Rodar testes unitarios (sem banco de dados)
-        run: pytest tests/core --cov=app --cov-report=term-missing
+        # cobertura medida so em app.core (unico pacote exercitado por esses testes);
+        # limiar com margem abaixo do real (~93%) para nao quebrar por pequenas variacoes
+        run: pytest tests/core --cov=app.core --cov-report=term-missing --cov-fail-under=85
 
   integration-test:
     runs-on: ubuntu-latest
@@ -75,9 +77,9 @@ jobs:
       POSTGRES_PORT: 5432
       JWT_SECRET_KEY: chave-de-teste-ci-nao-usar-em-producao
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -87,7 +89,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Rodar testes de integracao (API + servicos + Postgres real)
-        run: pytest tests/api tests/services --cov=app --cov-report=term-missing
+        # cobertura do pacote app inteiro (main.py importa todos os routers); limiar
+        # com margem abaixo do real (~73%) para nao quebrar por pequenas variacoes
+        run: pytest tests/api tests/services --cov=app --cov-report=term-missing --cov-fail-under=65
 
   data-pipeline-test:
     runs-on: ubuntu-latest
@@ -113,9 +117,9 @@ jobs:
       POSTGRES_PORT: 5432
       JWT_SECRET_KEY: chave-de-teste-ci-nao-usar-em-producao
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -140,7 +144,8 @@ jobs:
         run: dbt test --profiles-dir dbt --project-dir dbt --select silver gold --threads 1
 
       - name: Rodar testes sobre dados reais do pipeline (sem etapa de ML)
-        run: pytest tests/data_pipeline --cov=app --cov-report=term-missing
+        # cobertura do pacote app inteiro; limiar com margem abaixo do real (~70%)
+        run: pytest tests/data_pipeline --cov=app --cov-report=term-missing --cov-fail-under=60
 
   build-and-push:
     # so builda/publica a imagem depois que todo o CI passar, e so em push
@@ -152,17 +157,20 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Setup do Docker Buildx (necessario para o cache type=gha)
+        uses: docker/setup-buildx-action@v4
 
       - name: Login no GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build e push da imagem do backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           file: ./backend/Dockerfile
@@ -170,3 +178,5 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/sentinel-backend:latest
             ghcr.io/${{ github.repository_owner }}/sentinel-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
