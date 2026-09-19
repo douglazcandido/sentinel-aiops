@@ -49,7 +49,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Rodar testes unitarios (sem banco de dados)
-        run: pytest tests/core --cov=app --cov-report=term-missing
+        # cobertura medida so em app.core (unico pacote exercitado por esses testes);
+        # limiar com margem abaixo do real (~93%) para nao quebrar por pequenas variacoes
+        run: pytest tests/core --cov=app.core --cov-report=term-missing --cov-fail-under=85
 
   integration-test:
     runs-on: ubuntu-latest
@@ -87,7 +89,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Rodar testes de integracao (API + servicos + Postgres real)
-        run: pytest tests/api tests/services --cov=app --cov-report=term-missing
+        # cobertura do pacote app inteiro (main.py importa todos os routers); limiar
+        # com margem abaixo do real (~73%) para nao quebrar por pequenas variacoes
+        run: pytest tests/api tests/services --cov=app --cov-report=term-missing --cov-fail-under=65
 
   data-pipeline-test:
     runs-on: ubuntu-latest
@@ -140,7 +144,8 @@ jobs:
         run: dbt test --profiles-dir dbt --project-dir dbt --select silver gold --threads 1
 
       - name: Rodar testes sobre dados reais do pipeline (sem etapa de ML)
-        run: pytest tests/data_pipeline --cov=app --cov-report=term-missing
+        # cobertura do pacote app inteiro; limiar com margem abaixo do real (~70%)
+        run: pytest tests/data_pipeline --cov=app --cov-report=term-missing --cov-fail-under=60
 
   build-and-push:
     # so builda/publica a imagem depois que todo o CI passar, e so em push

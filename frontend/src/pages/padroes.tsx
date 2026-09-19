@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { Clock, Calendar, Network, ArrowUpDown } from "lucide-react"
+import { Clock, Calendar, ArrowUpDown } from "lucide-react"
 import { Topbar } from "@/components/topbar"
 import { Card } from "@/components/card"
 import { Skeleton } from "@/components/skeleton"
