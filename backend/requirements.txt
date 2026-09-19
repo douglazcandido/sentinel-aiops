@@ -3,7 +3,7 @@ fastapi==0.111.0
 uvicorn==0.30.1
 email-validator==2.2.0
 pandas>=2.0.0,<2.3.0
-scikit-learn==1.5.0
+scikit-learn==1.9.1
 neuralprophet==0.8.0
 torch>=2.0.0,<2.3.0
 lightning>=2.0.0,<2.3.0
