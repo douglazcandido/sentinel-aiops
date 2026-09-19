@@ -34,7 +34,7 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-  test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,5 +48,43 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements-dev.txt
 
-      - name: Rodar testes
-        run: pytest --cov=app --cov-report=term-missing
+      - name: Rodar testes unitarios (sem banco de dados)
+        run: pytest tests/core --cov=app --cov-report=term-missing
+
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.2
+        env:
+          POSTGRES_USER: sentinel
+          POSTGRES_PASSWORD: sentinel
+          POSTGRES_DB: sentinel
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sentinel"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+      POSTGRES_DB: sentinel
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      JWT_SECRET_KEY: chave-de-teste-ci-nao-usar-em-producao
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Rodar testes de integracao (API + Postgres real)
+        run: pytest tests/api --cov=app --cov-report=term-missing
