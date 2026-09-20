@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/skeleton"
 import { ErrorState, EmptyState } from "@/components/states"
 import { Badge, prioridadeTone, ProgressBar } from "@/components/badge"
 import { useClusters } from "@/lib/hooks"
-import { formatInt, formatPct, horaLabel, diaSemanaLabel } from "@/lib/utils"
+import { formatInt, formatPct, horaLabel, diaSemanaLabel, fixAccents } from "@/lib/utils"
 
 type SortMode = "incidentes" | "critico"
 
@@ -100,7 +100,7 @@ export default function PadroesPage() {
                     </div>
 
                     <p className="min-h-[2.5rem] text-sm leading-relaxed text-[var(--color-foreground)]">
-                      {c.descricao ?? "Padrão sem descrição"}
+                      {c.descricao ? fixAccents(c.descricao) : "Padrão sem descrição"}
                     </p>
 
                     <div className="mt-3 flex items-center gap-4 text-xs text-[var(--color-muted)]">
