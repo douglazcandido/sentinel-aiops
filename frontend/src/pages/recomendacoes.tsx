@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/skeleton"
 import { ErrorState, EmptyState } from "@/components/states"
 import { Badge, prioridadeTone } from "@/components/badge"
 import { useRecomendacoes } from "@/lib/hooks"
+import { fixAccents } from "@/lib/utils"
 import type { TipoRecomendacao } from "@/lib/types"
 
 type Filtro = TipoRecomendacao | "todas"
@@ -85,12 +86,12 @@ export default function RecomendacoesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <h3 className="text-sm font-semibold text-[var(--color-foreground)]">
-                        {rec.titulo}
+                        {fixAccents(rec.titulo)}
                       </h3>
                       <Badge tone="neutral">{TIPO_LABEL[rec.tipo]}</Badge>
                     </div>
                     <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
-                      {rec.descricao}
+                      {fixAccents(rec.descricao)}
                     </p>
                     {(rec.grupo_nome || rec.prioridade) && (
                       <div className="mt-3 flex flex-wrap gap-1.5">

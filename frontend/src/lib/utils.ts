@@ -98,3 +98,45 @@ export function mesLabel(mes: number): string {
   if (mes < 1 || mes > 12) return String(mes)
   return MESES[mes - 1]
 }
+
+/**
+ * O pipeline de recomendacoes/clusters (backend) grava texto sem acentuacao
+ * (ver `pipeline/recommend.py`). Corrige as palavras conhecidas aqui, sem
+ * depender de mudanca no pipeline/banco.
+ */
+const ACCENT_FIXES: Record<string, string> = {
+  reforco: "reforço",
+  reforcada: "reforçada",
+  violacoes: "violações",
+  violacao: "violação",
+  revisao: "revisão",
+  intervencao: "intervenção",
+  atencao: "atenção",
+  padrao: "padrão",
+  horario: "horário",
+  combinacao: "combinação",
+  periodo: "período",
+  reducao: "redução",
+  nao: "não",
+  terca: "terça",
+  sabado: "sábado",
+}
+
+const ACCENT_FIXES_RE = new RegExp(
+  `\\b(${Object.keys(ACCENT_FIXES).join("|")})\\b`,
+  "gi"
+)
+
+/** Preserva a capitalizacao original da palavra encontrada (ex.: "Atencao" -> "Atenção"). */
+function applyCase(original: string, fixed: string): string {
+  if (original === original.toUpperCase()) return fixed.toUpperCase()
+  if (original[0] === original[0].toUpperCase()) {
+    return fixed[0].toUpperCase() + fixed.slice(1)
+  }
+  return fixed
+}
+
+export function fixAccents(text: string | null | undefined): string {
+  if (!text) return ""
+  return text.replace(ACCENT_FIXES_RE, (match) => applyCase(match, ACCENT_FIXES[match.toLowerCase()]))
+}

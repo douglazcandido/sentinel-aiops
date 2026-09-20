@@ -25,6 +25,7 @@ import {
   formatDate,
   horaLabel,
   diaSemanaLabel,
+  fixAccents,
 } from "@/lib/utils"
 import { useAuth } from "@/lib/auth"
 
@@ -204,7 +205,7 @@ export default function DashboardPage() {
             ) : (
               <div key={clusters.version} className="flex flex-1 flex-col animate-fade">
                 <p className="text-sm leading-relaxed text-[var(--color-foreground)]">
-                  {clusterCritico.descricao ?? `Cluster #${clusterCritico.cluster_id}`}
+                  {clusterCritico.descricao ? fixAccents(clusterCritico.descricao) : `Cluster #${clusterCritico.cluster_id}`}
                 </p>
                 <div className="mt-3 flex items-center gap-2 text-xs text-[var(--color-muted)]">
                   <span className="flex items-center gap-1.5 rounded-lg bg-[var(--color-surface-2)] px-2.5 py-1.5">
@@ -296,10 +297,10 @@ export default function DashboardPage() {
             ) : (
               <div key={recs.version} className="flex flex-1 flex-col animate-fade">
                 <h4 className="text-sm font-semibold text-[var(--color-foreground)]">
-                  {recDestaque.titulo}
+                  {fixAccents(recDestaque.titulo)}
                 </h4>
                 <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-[var(--color-muted)]">
-                  {recDestaque.descricao}
+                  {fixAccents(recDestaque.descricao)}
                 </p>
                 <div className="mt-auto flex flex-wrap gap-1.5 border-t border-[var(--color-border)] pt-4 mt-4">
                   {recDestaque.grupo_nome && <Badge tone="accent">{recDestaque.grupo_nome}</Badge>}
