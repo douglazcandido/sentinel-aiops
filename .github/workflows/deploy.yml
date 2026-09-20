@@ -1,0 +1,31 @@
+name: Deploy
+
+# Dispara sempre que o CI/CD do backend ou do frontend terminar com sucesso
+# na main (ou seja, depois que a imagem nova ja foi publicada no GHCR).
+# branches: [main] filtra pelo head_branch do workflow que rodou -- so runs
+# disparados por push direto na main entram aqui (PRs tem head_branch igual
+# a branch de origem do PR, nunca "main").
+on:
+  workflow_run:
+    workflows: ["Backend CI/CD", "Frontend CI/CD"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy na VPS via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/deploy/sentinel-aiops
+            git pull --ff-only
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
