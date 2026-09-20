@@ -28,7 +28,7 @@ export const NAV_ITEMS = [
   { to: '/exportacao', label: 'Exportação', icon: Download },
 ]
 
-const GESTAO_ITEM = { to: '/gestao', label: 'Gestão', icon: Settings2, end: false }
+export const GESTAO_ITEM = { to: '/gestao', label: 'Gestão', icon: Settings2, end: false }
 
 interface SidebarProps {
   expanded: boolean
